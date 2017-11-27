@@ -98,7 +98,7 @@
  *           }
  *      } );
  *
- * 调用该 fn 会创建一个 page 的实例, 该实例持有以下方法:
+ * 调用该 fn 会创建一个 page 的实例, 该实例开放以下方法:
  *
  *  1: setTitle                         设置该 page 对应的标题
  *  2: isVisible                        判断该 page 是否可见
@@ -122,7 +122,7 @@
  *      },
  *
  *      // 部分 Lazy 加载的 Page 全局版本号
- *      lazy_page_ver_code: 123456789,
+ *      lazyPageVerCode: 123456789,
  *
  *      // 会在 page 切换之前调用, 其中 currently 指当前的 page,
  *      // upcoming 指即将呈现的 page.
@@ -605,6 +605,8 @@
  * ----------------------------------------------------------------------------
  *                              Dialog module
  * ----------------------------------------------------------------------------
+ *
+ * @deprecated
  */
 !function($x/*, undefined*/) {
     'use strict';
@@ -1388,7 +1390,7 @@
         
         /* 正向周期 */
         if ( page[ _STATE_ ] < new_state ) {
-            if ( INVALID_STATE == page[ _STATE_ ] )
+            if ( INVALID_STATE === page[ _STATE_ ] )
                 page[ _STATE_ ] = INITIALIZING;
             
             switch ( page[ _STATE_ ] ) {
@@ -1665,7 +1667,7 @@
      * @returns {ZeptoCollection}
      */
     function get_layout() {
-        return $( '#l_f_' + this[ _EL_ ][ _LAYOUT_ID_ ] );
+        return $( '#x_f' + this[ _EL_ ][ _LAYOUT_ID_ ] );
     }
     
     /**
@@ -1703,7 +1705,7 @@
         
         /* 为 DOM 设置 id */
         if ( ! is_sandbox_mode() )
-            layout.attr( 'id', 'l_f_' + layout_id );
+            layout.attr( 'id', 'x_f' + layout_id );
         
         page[ _EL_ ][ _LAYOUT_ID_ ] = layout_id;
         
@@ -2329,7 +2331,7 @@
                 ] );
             } );
             
-            _global_lazy_page_version_code = _config[ 'lazy_page_ver_code' ];
+            _global_lazy_page_version_code = _config[ 'lazyPageVerCode' ];
         }
     }
 
@@ -4564,19 +4566,19 @@
      * $Page 开放的静态 fn, 用于定义, 跳转控制.
      *
      * @type { {
-     *          config: {Map},
-     *          title: string,
-     *          define: (xfly.page|*),
-     *          bootstrap: win.$Page.bootstrap,
-     *          go: win.$Page.go,
-     *          goWithoutFx: win.$Page.goWithoutFx,
-     *          canBack: can_back,
-     *          back: back,
-     *          reload: _reload,
-     *          update: throwNiyError,
-     *          finish: win.$Page.finish,
-     *          finishAndGo: win.$Page.finishAndGo,
-     *          destroy: throwNiyError
+     *          config:         {Map},
+     *          title:          string,
+     *          define:         (xfly.page|*),
+     *          bootstrap:      win.$Page.bootstrap,
+     *          go:             win.$Page.go,
+     *          goWithoutFx:    win.$Page.goWithoutFx,
+     *          canBack:        can_back,
+     *          back:           back,
+     *          reload:         _reload,
+     *          update:         throwNiyError,
+     *          finish:         win.$Page.finish,
+     *          finishAndGo:    win.$Page.finishAndGo,
+     *          destroy:        throwNiyError
      * } }
      *
      * @global
