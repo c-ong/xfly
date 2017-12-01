@@ -1,0 +1,19 @@
+@charset "UTF-8";
+/* CDN 资源主机地址 */
+/* 往往用于开发环境(即自己的机器) */
+/* 资源的基本路径 */
+
+.x-ui {
+    /*.address-list-box {
+        transform: translate3d(0, 0, 0);
+    }*/ }
+
+/* 全部开启 GPU 加速(测试) */
+/** {*/
+/*transform: translate3d(0, 0, 0);*/
+/*will-change: transform;*/
+/*transform: translateZ(0);*/
+/*
+}*/
+
+/*# sourceMappingURL=xui.css.map */

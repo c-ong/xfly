@@ -1403,8 +1403,11 @@
                         page[ _FLAG_POST_RELOAD ] && ( page[ _FLAG_POST_RELOAD ] = !! 0 );
                         /* 重置 called flag */
                         page[ _RENDER_CALLED_ ] = !! 0;
-    
+
                         _invoke_handler( page, _CREATE_VIEW );
+
+                        if ( ! page[ _RENDER_CALLED_ ] && page[ _HTML ] )
+                            _invoke_render( page, { html: page[ _HTML ] } );
     
                         if ( ! page[ _RENDER_CALLED_ ] ) {
                             _invoke_render( page, { url: _build_url_for_render( page ) } );
@@ -1889,13 +1892,14 @@
         /* TODO(XCL): 如果 DOM 没有附载到 Document 则需要添加至其中... */
         /* To render using the html snippet(Mean: Inner view) */
         if ( is_sandbox_mode() ) {
-            var is_first_page = $.isEmptyObject( _sandbox_dom_container );
+            /*var is_first_page = $.isEmptyObject( _sandbox_dom_container );*/
             
             _set_up_layout_id( this );
+
             
-            if ( ! is_first_page ) {
+            /*if ( ! is_first_page ) {*/
                 /* 是否为当前 Page, 是当前则更新，反则放置于 Sandbox 容器 */
-                if ( _current == this ) {
+                if ( _current == void 0 || _current == this ) {
                     /* 对于 reload 模式，需将现有 View 移除 */
                     if ( data[ 'reload' ] )
                         $x._viewport.children( '.page-ui' ).remove();
@@ -1905,7 +1909,7 @@
                     /* NOTE(XCL): 这里放置的为 Raw HTML。 */
                     _sandbox_dom_container[ get_layout_id.call( this ) ] = data[ _HTML ];
                 }
-            }
+            /*}*/
         } else {
             get_layout.call( this ).html( data[ _HTML ] );
         }
@@ -3584,15 +3588,13 @@
         /* ----------------------------------------------------------------- */
 
         /* 填充 HTML 片段，如果已指定该字段 */
-        /* if ( ! isAncestor ) { */
         if ( _HTML in props ) {
             page[ _HTML ] = props[ _HTML ];
-            _invoke_render( page, page );
+            // _invoke_render( page, page );
         } else if ( _URL in props ) {
             page[ _URL ] = props[ _URL ];
-            _invoke_render( page, page );
+            // _invoke_render( page, page );
         }
-        /* } */
 
         /* ----------------------------------------------------------------- */
 
@@ -4067,6 +4069,7 @@
         var current = _current_state;
 
         return _FIRST_STATE === current[ _BSR_IDX ]
+            || event.state[ _BSR_IDX ] === 0
             || event.state[ _BSR_IDX ] < current[ _BSR_IDX ];
     }
     
@@ -4098,7 +4101,6 @@
     /* TODO(XCL): 如果跳转到其它页面当后退至当前页面则可能 stack 丢失(RELOAD) */
     /* TODO(XCL): 若 history 有多项记录, 此时 reload 会导致无法进行后退操作(BackStack 为空) */
     var _pop_state_handler = function(event) {
-        
         /**
          * FIXME(XCL): 如果正在进行 trans 时触发 pop state 则说明是为了修正来自用户的
          *              快速 touch 操作来的 page 无跳转的问题, 此时仅仅是进行
@@ -4106,7 +4108,7 @@
          */
         if ( ! _check_state_event( event ) )
             return;
-    
+
         /* FIXME(XCL): To handling the state loss... */
         if ( ! _back_stack.length ) {
             /* FIXME(XCL): 若开启 reload 则在部分设备，后退时会 reload */
@@ -4137,10 +4139,10 @@
                     //}
                 }
             }
-            
+
             return;
         }
-    
+
         _is_backward( event )
             ? _handle_backward( event )
             : _handle_forward( event );
@@ -4611,6 +4613,7 @@
          *
          * @param id
          * @param args
+         * @deprecated
          */
         bootstrap:  function(id, args) {
             //if ( _ORIGIN_HASH ) {

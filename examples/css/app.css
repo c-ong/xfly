@@ -1,0 +1,22 @@
+#xfly_viewport {
+    background-color: #f2f2f2;
+    color: black;
+    height: 100%;
+    padding: 16px;
+}
+
+#xfly_viewport a {
+    display: block;
+    width: 90%;
+    font-size: 18px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    border-radius: 2px;
+    border: none;
+    color: inherit;
+    box-shadow: 1px 2px 5px rgba(0, 0, 0, .1);
+    background-color: white;
+    margin-top: 16px;
+    text-decoration: none;
+}

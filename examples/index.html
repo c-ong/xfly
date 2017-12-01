@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover"/>
+    <base target="_self"/>
+    <meta name="description" content="This is SPA framework for the lite Web App.">
+
+
+    <meta name="apple-mobile-web-app-title" content="Xfly">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="white">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta http-equiv="Expires" CONTENT="-1">
+    <meta http-equiv="Cache-Control" CONTENT="no-cache">
+    <meta http-equiv="Pragma" CONTENT="no-cache">
+
+
+    <link rel="stylesheet" href="css/xfly.css" type="text/css"/>
+    <link rel="stylesheet" href="css/app.css" type="text/css"/>
+
+    <script type="text/javascript" charset="utf-8" src="js/3rd/zepto/1.2.0/zepto.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/3rd/zepto/1.2.0/fx.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="../xfly-dev.0.1.48.js"></script>
+
+
+    <title>Xfly</title>
+</head>
+<body id="xfly_viewport" class="x-ui">
+<script type="text/javascript" charset="utf-8" src="js/app/welcome.js" defer></script>
+<script type="text/javascript" charset="utf-8" src="js/app/see.you.again.js" defer></script>
+<script type="text/javascript" charset="utf-8" src="js/app/page.with.args.js" defer></script>
+<script defer>
+    $.ajaxSettings['cache'] = ! 1;
+
+    $Page.config({
+        onAfterPageChange: function(older, currently) {
+
+        },
+        onCurrentPageContentLoaded: function() {
+
+        }
+    });
+
+    $(function () {
+        alert( 'Now, take you to the SPA mode.' );
+        go( 'welcome' );
+    });
+</script>
+</body>
+</html>
