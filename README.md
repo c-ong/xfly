@@ -7,6 +7,7 @@ This is SPA framework for the lite Web App with Morden browser.
 * Pre-load;
 * Lazy load;
 * Multi-instance;
+* Simple trigger are supported;
 * Single page reload;
 * Easy way for Query string accessing;
 
@@ -19,3 +20,7 @@ See the examples dir.
 
 # Legacy version is here(Hash based)
 Click to get the [base.fly](https://github.com/c-ong/starter/tree/dev/app/scripts).
+
+
+# License
+Licensed under the MIT license.
