@@ -3,7 +3,7 @@ This is SPA framework for the lite Web App with Morden browser.
 
 # Features
 * Page life-cycle supported(refer Android、iOS);
-* SEO friendly;
+* SEO friendly(Server side render needed);
 * Pre-load;
 * Lazy load;
 * Multi-instance;
