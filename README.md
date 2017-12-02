@@ -1,6 +1,10 @@
 # Xfly
 This is SPA framework for the lite Web App with Morden browser.
 
+
+
+
+
 # Features
 * Page life-cycle supported(refer Android、iOS);
 * SEO friendly(Server side render needed);
@@ -8,7 +12,7 @@ This is SPA framework for the lite Web App with Morden browser.
 * Lazy load;
 * Multi-instance;
 * Simple trigger are supported;
-* Single page reload;
+* Single page reload(On demand);
 * Easy way for Query string accessing;
 
 
@@ -20,6 +24,8 @@ See the examples dir.
 
 # Legacy version is here(Hash based)
 Click to get the [base.fly](https://github.com/c-ong/starter/tree/dev/app/scripts).
+
+
 
 
 # License
