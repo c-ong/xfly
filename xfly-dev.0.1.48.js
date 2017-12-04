@@ -154,7 +154,7 @@
 /**
  * Created by xong on 10/29/15.
  *
- * @dependents Zepto
+ * @dependents Zepto | jQuery
  */
 ;!function(xfly) {
     'use strict';
@@ -346,7 +346,7 @@
      * @type {DomElement}
      * @private
      */
-    _._viewport       = void 0;
+    _._viewport        = void 0;
 
     /* --------------------------------------------------------------------- */
 
@@ -688,20 +688,20 @@
      * @private
      * @const
      */
-    var _STACK_INDEX_       = '_stck_idx_',
-        _EL_                = '_el_',
-        _LAYOUT_            = '_lyt_',
-        _LAYOUT_ID_         = '_lyt_id_',
-        _STATE_             = '_stt_', /* initial value is INITIALIZING */
+    var _STACK_INDEX_           = '_stck_idx_',
+        _EL_                    = '_el_',
+        _LAYOUT_                = '_lyt_',
+        _LAYOUT_ID_             = '_lyt_id_',
+        _STATE_                 = '_stt_', /* initial value is INITIALIZING */
         /* 可能的父级 page */
-        _PARENT_            = '_parent_';
+        _PARENT_                = '_parent_';
 
-    var _RENDER_CALLED_     = '_rndr_clld_';
+    var _RENDER_CALLED_         = '_rndr_clld_';
 
     /* 是否支持多实例(Multiple instance) */
-    var _MULTIPLE_INSTANCES = 'multitask',
-    /* _IS_DERIVE_          = '_derive_', */ /* 是识是否为派生实例 */
-        _DERIVE_ID_         = '_derive_id_'; /* 派生后的实例 ID */
+    var _MULTIPLE_INSTANCES     = 'multitask',
+    /* _IS_DERIVE_              = '_derive_', */ /* 是识是否为派生实例 */
+        _DERIVE_ID_             = '_derive_id_'; /* 派生后的实例 ID */
 
     /* 标识是否内容加载完成 */
     var _FLAG_CONTENT_LOADED    = '_cnt_ld_',
@@ -892,12 +892,13 @@
     /**
      * 从集合中取 page 的实例 根据指定的 id, 如: about.
      *
+     * ui.view#hash
+     * ui.view#343434344
+     *
      * @param {string} id
      * @returns {*}
      */
     function _get_page(id) {
-        /* ui.view#hash
-        ui.view#343434343 */
         return _pages[ id ];
     }
     
@@ -1292,7 +1293,8 @@
         _fix_scroll( this );
         _invoke_render_handler( this, _RENDERED_HANDLER );
     }
-    
+
+    /* FIXME(XCL): Fix scroll problem when you work with iScroll. */
     function _fix_scroll(page) {
         var container = page.getContainer();
         var scroll_dom = $( '.page-scroller', container );
@@ -1301,18 +1303,18 @@
             var scrolls = [];
             
             var options = {
-                probeType:  3,
-                mouseWheel: true,
+                probeType:      3,
+                mouseWheel:     true,
                 /* FIXME(XCL): 启用 bounce 在 UC 环境会导致 Header 或 tooter 不可见 */
-                bounce:     false,
-                click:      true,
+                bounce:         false,
+                click:          true,
                 /*eventPassthrough: false,
-                scrollX: true,
-                scrollY: true,
+                scrollX:        true,
+                scrollY:        true,
                 preventDefault: false*/
                 /* FIXME(XCL): 解决 form field 在获取 focus 后，点击任意元素都会唤出键盘的问题
                 preventDefault: xfly.os.ios || false,*/
-                keyBindings: true
+                keyBindings:    true
             };
             
             scroll_dom
@@ -1326,7 +1328,6 @@
                             .parent( '.page-scroll-wrapper' );
                     }
                     
-                    //new iScroll( wrapper[ 0 ], options );
                     scrolls.push( new IScroll( wrapper[ 0 ], options ) );
             } );
     
@@ -1368,14 +1369,14 @@
             return layout_id && layout_id in _sandbox_dom_container;
         } else {
             var layout = get_layout.call( page );
-            return layout.length && layout[ 0 ].parentNode && '' != layout.html();
+            return layout.length && layout[ 0 ].parentNode && '' !== layout.html();
         }
     }
 
     /**
      * 返回 page 容器, 这是一个 ZeptoCollection 类型的数据.
      *
-     * NOTE: Not applied on Sandbox mode;
+     * NOTE(XCL): Not applied on Sandbox mode;
      *
      * @returns {ZeptoCollection}
      */
@@ -1557,6 +1558,7 @@
     function back(from_uri/* allowUpToHome */) {
         /*console.log("InProcessing %s, fromUri %s, backStack %s",
             _hasPageTransInProcessing(), fromUri, _hasBackStackRecords() );*/
+
         /*if ( ! canBack() )*/
         if ( _has_page_trans_in_processing() )
             return;
@@ -1607,17 +1609,17 @@
 
             
             /*if ( ! is_first_page ) {*/
-                /* 是否为当前 Page, 是当前则更新，反则放置于 Sandbox 容器 */
-                if ( _current == void 0 || _current == this ) {
-                    /* 对于 reload 模式，需将现有 View 移除 */
-                    if ( data[ 'reload' ] )
-                        $x._viewport.children( '.page-ui' ).remove();
-        
-                    $x._viewport.append( data[ _HTML ] );
-                } else {
-                    /* NOTE(XCL): 这里放置的为 Raw HTML。 */
-                    _sandbox_dom_container[ get_layout_id.call( this ) ] = data[ _HTML ];
-                }
+            /* 是否为当前 Page, 是当前则更新，反则放置于 Sandbox 容器 */
+            if ( _current == void 0 || _current == this ) {
+                /* 对于 reload 模式，需将现有 View 移除 */
+                if ( data[ 'reload' ] )
+                    $x._viewport.children( '.page-ui' ).remove();
+
+                $x._viewport.append( data[ _HTML ] );
+            } else {
+                /* NOTE(XCL): 这里放置的为 Raw HTML。 */
+                _sandbox_dom_container[ get_layout_id.call( this ) ] = data[ _HTML ];
+            }
             /*}*/
         } else {
             get_layout.call( this ).html( data[ _HTML ] );
