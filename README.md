@@ -12,7 +12,7 @@ This is SPA framework for the lite Web App with Morden browser.
 * Lazy load;
 * Multi-instance;
 * Simple trigger are supported;
-* Single page reload(O``____``n demand);
+* Single page reload(On demand);
 * Easy way for Query string accessing;
 
 
