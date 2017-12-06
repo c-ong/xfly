@@ -33,7 +33,7 @@
  *
  *           html/url: 'URL or HTML', // 完整 URL 或 HTML 片段
  *
- *           trigger: { on: 'home', state: 'present', do: 'preload' },
+ *           trigger: { on: 'home', state: 'show', do: function() {} },
  *
  *           onAttach: function() {
  *              // page 容器被添加到 DOM 中后会调用
@@ -644,9 +644,9 @@
      * @const
      * @private
      */
-    var _STANDARD_BACK      = -1,
+    var _STANDARD_BACK          = -1,
 
-        _MAGIC_BACK_FIRER   = -2;
+        _MAGIC_BACK_FIRER       = -2;
 
     /**
      * 记录转化后的 hash 值, 及参数.
@@ -654,33 +654,33 @@
      * @type {string}
      * @private
      */
-    var _ROUTE      = 'hash',
+    var _ROUTE                  = 'hash',
 
         /* Route 的参数 */
-        _ROUTE_ARGS = 'args',
+        _ROUTE_ARGS             = 'args',
 
         /* Page 的唯一标识 */
-        _ID         = 'id',
+        _ID                     = 'id',
 
         /* Window 标题 */
-        _TITLE      = 'title',
+        _TITLE                  = 'title',
 
         /* 在配置中 HTML 与 URL 只选其一, 默认使用 HTML */
-        _HTML       = 'html',
-        _URL        = 'url',
+        _HTML                   = 'html',
+        _URL                    = 'url',
 
         /* Page 指定的切换效果 */
-        _ANIMATION  = 'animation',
+        _ANIMATION              = 'animation',
         /* 临时覆盖的切换效果 */
         _OVERRIDDEN_ANIMATION   = '_force_anima',
         _BACK_STACK_TARGET_ID   = '_',
 
         /* 依赖项 */
-        _REQUIRES   = 'requires',
+        _REQUIRES               = 'requires',
         
-        _SCROLLER   = 'scroller';
+        _SCROLLER               = 'scroller';
         
-    var _CFG_LAZY_MODE_ENABLED = 'lazyModeEnabled';
+    var _CFG_LAZY_MODE_ENABLED  = 'lazyModeEnabled';
     
     /**
      * 一些常量。
