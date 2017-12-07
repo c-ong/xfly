@@ -4887,9 +4887,7 @@
             id:         stackId,
             cancelable: !! cancelable || 1, /* 是否可取消 */
             dismissed:  0,                  /* 是否已被 dismiss */
-            _el_: {
-                wrapper: wrapper
-            }
+            _el_:       { wrapper: wrapper }
         };
 
         /* 对 Dialog 开放的方法 */

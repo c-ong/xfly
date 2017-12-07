@@ -3,16 +3,124 @@
 /* 往往用于开发环境(即自己的机器) */
 /* 资源的基本路径 */
 
+* {
+    box-sizing: border-box;
+}
+
 .x-ui {
-    /*.address-list-box {
-        transform: translate3d(0, 0, 0);
-    }*/ }
+    transform: translate3d(0, 0, 0);
+}
+
+html {
+    width: 100%;
+    height: 100%;
+    font-size: 20px;
+    font-family: sans-serif !important;
+    -webkit-text-size-adjust: 100%;
+}
+
+/*------------------------------------------------*/
+
+.x-ui #dialog_mask {
+    /* 考虑在 X5 上关掉 transform http://x5.tencent.com/doc?id=1002#_1.1 */
+    /*http://stackoverflow.com/questions/12643240/improving-css3-transition-performance*/
+    /*will-change: transform;*/
+    /*-webkit-transform: translate3d(0, 0, 0);*/
+    /*transform: translate3d(0, 0, 0);*/
+
+    /*will-change: transform;*/
+    /*-webkit-transform: translateZ(0);*/
+    /*transform: translateZ(0);*/
+
+    /*-webkit-backface-visibility: hidden;*/
+    /*backface-visibility: hidden;*/
+
+    /*-webkit-perspective: 1000px;*/
+    /*perspective: 1000px;*/
+}
+
+#xfly_dialog {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba( 0, 0, 0, 0.2 );
+}
+
+#dialog_mask {
+    /*position: fixed;*/
+    display: none;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    /*background-color: rgba(255, 255, 255, .6);*/
+    background-color: rgba(0, 0, 0, .4);
+}
+
+/*------------------------------------------------------*/
+
+@-webkit-keyframes dialog-mask-in {
+    from {
+        /*will-change: transform;*/
+        /*-webkit-transform: translatex(0, 0, 0);*/
+        /*transform: translatex(0, 0, 0);*/
+        background-color: rgba(0, 0, 0, .0)
+    }
+    to {
+        /*will-change: transform;*/
+        /*-webkit-transform: translatex(0, 0, 0);*/
+        /*transform: translatex(0, 0, 0);*/
+        background-color: rgba(0, 0, 0, .4)
+    }
+}
+@-webkit-keyframes dialog-mask-out {
+    from {
+        /*will-change: transform;*/
+        /*-webkit-transform: translatex(0, 0, 0);*/
+        /*transform: translatex(0, 0, 0);*/
+        background-color: rgba(0, 0, 0, .4)
+    }
+    to {
+        /*will-change: transform;*/
+        /*-webkit-transform: translatex(0, 0, 0);*/
+        /*transform: translatex(0, 0, 0);*/
+        background-color: rgba(0, 0, 0, .0)
+    }
+}
+/*------------------------------------------------------*/
+
+/* Unused */
+#dialog_stack {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+.dialog-wrapper {
+    display: none;
+
+    position: relative;
+    background-color: white;
+    /*top: 50%;*/
+    margin-left: auto;
+    margin-right: auto;
+    min-width: 86%;
+    min-height: 34%;
+    max-width: 86%;
+    max-height: 34%;
+    /*margin-top: -45%;*/
+    border-radius: 2px;
+    box-shadow: 0 15px 25px 0 rgba(0, 0, 0, 0.2);
+}
 
 /* 全部开启 GPU 加速(测试) */
 /** {*/
-/*transform: translate3d(0, 0, 0);*/
-/*will-change: transform;*/
-/*transform: translateZ(0);*/
+    /*transform: translate3d(0, 0, 0);*/
+    /*will-change: transform;*/
+    /*transform: translateZ(0);*/
 /*
 }*/
 

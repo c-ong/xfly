@@ -17,7 +17,7 @@ $Page.define('page.with.args', {
 
     },
 
-    onRendered:function(){
+    onRendered: function() {
 
     }
 });

@@ -16,7 +16,6 @@ $Page.define('see.you.again', {
 
     },
 
-    onRendered:function(){
-
+    onRendered: function() {
     }
 });

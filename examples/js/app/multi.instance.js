@@ -17,7 +17,7 @@ $Page.define('multi.instance', {
 
     },
 
-    onRendered:function(){
+    onRendered: function() {
 
     }
 });
