@@ -1,10 +1,6 @@
 # Xfly
 This is SPA framework for the lite Web App with Morden browser.
 
-
-
-
-
 # Features
 * Page life-cycle supported(refer Android、iOS);
 * SEO friendly(Server side render needed);
@@ -16,6 +12,12 @@ This is SPA framework for the lite Web App with Morden browser.
 * Single page reload(On demand);
 * Easy way for Query string accessing;
 
+# Why Xfly?
+* Enhancement that responsiveness for fast
+* State-driven programing(similar Native App)
+* Make your DOMs be Pretty and Clean
+* Reduce the resources request
+* Focus you things, no matter that routing、flow and MORE...
 
 # Getting started
 **1: Prepare for your playground**
