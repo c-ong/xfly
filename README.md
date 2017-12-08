@@ -28,7 +28,7 @@ Ngingx OR Apache
 
 **2: Define the page model**
 
-IMPORTANT: every DOM of page, there are need add the page-ui class at root level element
+**IMPORTANT**: every DOMs of page, there are need add to the "page-ui" class at root element
 ```javascript
 $Page.define('you.path.name', {
 
@@ -48,8 +48,16 @@ $Page.define('you.path.name', {
 
     },
 
-    onRendered:function(){
+    onRendered: function() {
 
+    },
+    
+    onResume: function () {
+        console.log( this.id + ' be resumed.' );
+    },
+
+    onPause: function () {
+        console.log( this.id + ' be paused.' );
     }
 });
 ```

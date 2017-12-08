@@ -16,15 +16,23 @@ $Page.define('welcome', {
             '<b>MORE EXAMPLES BE COMING SOON...</b>' +
           '</div>',
 
-    onCreateView: function() {
+    onCreateView: function () {
 
     },
 
-    onRendering: function() {
+    onRendering: function () {
 
     },
 
-    onRendered: function() {
+    onRendered: function () {
 
+    },
+
+    onResume: function () {
+        console.log( this.id + ' be resumed.' );
+    },
+
+    onPause: function () {
+        console.log( this.id + ' be paused.' );
     }
 });
