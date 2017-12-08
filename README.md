@@ -28,7 +28,7 @@ Ngingx OR Apache
 
 **2: Define the page model**
 
-**IMPORTANT**: every DOMs of page, there are need add to the "page-ui" class at root element
+**IMPORTANT**: every DOMs of page, there are need to add the "page-ui" class at root element
 ```javascript
 $Page.define('you.path.name', {
 
@@ -86,7 +86,7 @@ Be careful the Browser Cache, good luck for YOUR.
 
 
 # Examples
-See the examples dir.
+See the [examples](https://github.com/c-ong/xfly/tree/master/examples) dir.
 
 
 # Legacy version is here(Hash based)
