@@ -17,7 +17,7 @@ This is SPA framework for the lite Web App with Morden browser.
 * State-driven programing(similar Native App)
 * Make your DOMs be Pretty and Clean
 * Reduce the resources request
-* Focus you things, no matter that routing、flow and MORE...
+* Focus your things, no matter that routing、flow and MORE...
 
 # Getting started
 **1: Prepare for your playground**
@@ -31,7 +31,7 @@ Ngingx OR Apache
 **2: Define the page model**
 
 **IMPORTANT**: every DOMs of page, there are need to add the "page-ui" class at root element
-```javascript
+```js
 $Page.define('you.path.name', {
 
     title: 'You first page',
@@ -66,20 +66,20 @@ $Page.define('you.path.name', {
 
 **2: Navigation behavior**
 
-Forward:
+**Forward:**
 ```html
 <a class="xfly-page__nav" href="you/other/page">Go to the Next page</a>'
 ```
 OR
-```javascript
+```js
 go( 'you.other.page' );
 ```
-Backward:
+**Backward:**
 ```html
 <a class="xfly-page__back" href="">Get back</a>'
 ```
 OR
-```javascript
+```js
 back();
 ```
 **3: Almost done**
