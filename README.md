@@ -90,6 +90,8 @@ Be careful the Browser Cache, good luck for YOUR.
 # Examples
 See the [examples](https://github.com/c-ong/xfly/tree/master/examples) dir.
 
+![Xfly](https://github.com/c-ong/xfly/blob/master/screenshots/xfly.png?raw=true)
+
 
 # Legacy version is here(Hash based)
 Click to get the [base.fly](https://github.com/c-ong/starter/tree/dev/app/scripts).
