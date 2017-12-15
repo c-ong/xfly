@@ -1,5 +1,5 @@
 # Xfly
-This is SPA framework for the lite Web App with Morden browser.
+This is SPA framework for the lite Web App with Modern browser.
 
 # Features
 * Page life-cycle supported(refer Android、iOS);
