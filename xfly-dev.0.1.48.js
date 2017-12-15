@@ -81,7 +81,7 @@
  *
  *           // -------------- 以下为 Render 对应的 callback ------------
  *
- *           onPreRender: function(container) {
+ *           onPrerender: function(container) {
  *              // 开始 Render 操作, 比如你可以在上里作一些 Reset 操作
  *           },
  *
@@ -744,7 +744,7 @@
             ];
 
     /* Render 对应的 Callback */
-    var _PRE_RENDER_HANDLER = 'onPreRender',
+    var _PRERENDER_HANDLER = 'onPrerender',
         _RENDERING_HANDLER  = 'onRendering',
         _RENDERED_HANDLER   = 'onRendered';
 
@@ -770,7 +770,7 @@
         'onDestroy',
         
         /* Before & After Rendering */
-        _PRE_RENDER_HANDLER, _RENDERING_HANDLER, _RENDERED_HANDLER,
+        _PRERENDER_HANDLER, _RENDERING_HANDLER, _RENDERED_HANDLER,
         
         /* Will invoke when reload occur */
         _ON_RELOAD
@@ -1280,7 +1280,7 @@
      * @private
      */
     function pre_render() {
-        _invoke_render_handler( this, _PRE_RENDER_HANDLER );
+        _invoke_render_handler( this, _PRERENDER_HANDLER );
     }
     
     /**
