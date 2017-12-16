@@ -93,6 +93,10 @@ See the [examples](https://github.com/c-ong/xfly/tree/master/examples) dir.
 ![Xfly](https://github.com/c-ong/xfly/blob/master/screenshots/xfly.png?raw=true)
 
 
+# Further Features
+* Scroll restoration supported
+
+
 # Legacy version is here(Hash based)
 Click to get the [base.fly](https://github.com/c-ong/starter/tree/dev/app/scripts).
 
