@@ -624,7 +624,8 @@
     /* 标识 Env 是否支持 History API */
     var history_api_supported               = 'onpopstate' in win,
         session_storage_supported           = !! 0,
-        persistent_session_stack_idx_offset = 0;
+        persistent_session_stack_idx_offset = 0,
+        scroll_restoration_supported        = 'scrollRestoration' in history;
 
     /**
      * 以 #! 打头的 hash 可识别为我们的 page 导向.
@@ -633,10 +634,11 @@
      * @const
      * @private
      */
-    var _FRAGMENT_HASH_STRIPPER = '#!',
+    var _FRAGMENT_HASH_STRIPPER          = '#!',
 
         /* 这是一个特殊的 hash 它用于后退操作 */
-        _MAGIC_BACK_HASH        = _FRAGMENT_HASH_STRIPPER + '-';
+        _MAGIC_BACK_HASH                 = _FRAGMENT_HASH_STRIPPER + '-',
+        _SCROLL_RESTORATION_FOR_REDIRECT = '#xsrfr';
     
     /**
      * Used for history API
@@ -693,7 +695,8 @@
         _LAYOUT_ID_             = '_lyt_id_',
         _STATE_                 = '_stt_', /* initial value is INITIALIZING */
         /* 可能的父级 page */
-        _PARENT_                = '_parent_';
+        _PARENT_                = '_parent_',
+        _SCROLL_POSITION_Y_     = '_s_p_y_';
 
     var _RENDER_CALLED_         = '_rndr_clld_';
 
@@ -2591,6 +2594,8 @@
     }
 
     function _push_state(state, title, url_or_hash) {
+        state[ _SCROLL_POSITION_Y_ ] = _obtain_scroll_position_y();
+
         _persistent_state( state, title, url_or_hash );
     
         /* TODO(XCL): Session Or Local Storage */
@@ -2600,7 +2605,9 @@
     function _persistent_state_for_redirect(url) {
         _push_state( _new_state(), '', url )
     }
-    
+
+    var _PERSISTENT_STATE_SEPARATOR = ' ';
+
     /**
      * 首页无需 history.pushState
      *
@@ -2613,7 +2620,12 @@
         if ( session_storage_supported ) {
             var stack_idx_for_persistent = persistent_session_stack_idx_offset++;
     
-            ss.setItem( '#' + stack_idx_for_persistent, encodeURI( url_or_hash ) );
+            ss.setItem( '#' + stack_idx_for_persistent,
+                encodeURI( url_or_hash ) +      /* URL */
+                _PERSISTENT_STATE_SEPARATOR +
+                state[ _SCROLL_POSITION_Y_ ]    /* Y of Scroll position */
+            );
+
             ss.setItem( SESSION_CURRENT_STATE, stack_idx_for_persistent );
     
             _scheduling_for_remove_eldest_state();
@@ -3832,11 +3844,23 @@
                     var previous_state = ss.getItem( '#' + --persistent_session_stack_idx_offset );
     
                     if ( previous_state ) {
+                        var url;
+
                         ss.setItem( SESSION_CURRENT_STATE,
                             persistent_session_stack_idx_offset );
-    
-                        location.href = decodeURI( previous_state );
-                        
+
+                        /* Compatible with V1 state (URL only) */
+                        if ( ~ previous_state.indexOf( _PERSISTENT_STATE_SEPARATOR ) ) {
+                            var state = previous_state.split( _PERSISTENT_STATE_SEPARATOR );
+
+                            url = decodeURI( state[ 0 ] );
+                            _setup_scroll_restoration_for_redirect( state[ 1 ] );
+                        } else {
+                            url = previous_state;
+                        }
+
+                        location.href = decodeURI( url );
+
                         return;
                     } else {
                         location.reload();
@@ -4248,6 +4272,30 @@
     
     /* --------------------------------------------------------------------- */
 
+    function _restore_scroll_position(y) {
+        window.scrollTo( 0, y );
+    }
+
+    function _obtain_scroll_position_y() {
+        return window.scrollY;
+    }
+    
+    function _setup_scroll_restoration_for_redirect(future_y) {
+        ss.setItem( _SCROLL_RESTORATION_FOR_REDIRECT, future_y );
+    }
+    
+    function _perform_scroll_restore_after_redirect_if_needed() {
+        var y = ss.getItem( _SCROLL_RESTORATION_FOR_REDIRECT );
+
+        if ( y ) {
+            ss.remove( _SCROLL_RESTORATION_FOR_REDIRECT );
+
+            _restore_scroll_position( y );
+        }
+    }
+
+    /* --------------------------------------------------------------------- */
+
     /**
      * TODO(XCL): Mixed props
      *
@@ -4594,7 +4642,7 @@
                 var first,
                     layout;
                 
-                var page_id;
+                var pageId;
     
                 /* To apply the params as args */
                 _override_args( route.target, route.args );
@@ -4614,19 +4662,19 @@
                      *      许 args 为 null。
                      */
                     if ( route.target === deriveId ) {
-                        page_id = route.target;
+                        pageId = route.target;
                     } else {
                         if ( ! _exist( deriveId ) )
                             _build_derive( route.target, deriveId, route.args );
             
-                        page_id = deriveId;
+                        pageId = deriveId;
                     }
                 } else {
-                    page_id = route.target;
+                    pageId = route.target;
                 }
     
                 /* Assign for current */
-                first   = _get_page( page_id );
+                first   = _get_page( pageId );
                 layout  = $( '.xfly-page' );
 
                 if ( ! is_sandbox_mode() ) {
@@ -4699,6 +4747,11 @@
         /* Manipulating the browser history */
         history_api_supported
             && ( window.addEventListener( _LISTEN_WINDOW_POP_STATE, _pop_state_handler ) );
+
+        /* Handle the scroll restoration after redirect if needed */
+        session_storage_supported
+            && scroll_restoration_supported
+                && ( _perform_scroll_restore_after_redirect_if_needed() );
     
         /**
          * 差集
@@ -4834,7 +4887,8 @@
     }
 
     function _prepare_dialog() {
-        _DIALOG_WRAPPER_TEMPLATE = $( '<div class="dialog-wrapper" id="dialog_wrapper"><div id="dialog_body"></div></div>' );
+        _DIALOG_WRAPPER_TEMPLATE =
+            $( '<div class="dialog-wrapper" id="dialog_wrapper"><div id="dialog_body"></div></div>' );
 
         _dialog_root = $( _idSelector( $x.ID_DIALOG ) );
         _dialog_mask = $( _idSelector( $x.ID_DIALOG_MASK ) );
@@ -5058,5 +5112,5 @@
         return _build( html, cancelable, actions );
     };
 
-    /* TODO(XCL): auto dismiss */
+    /* TODO(XCL): Auto dismiss */
 }(xfly);
