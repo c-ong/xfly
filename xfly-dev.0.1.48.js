@@ -3185,6 +3185,10 @@
         /* 没有任何有效的 path 规划 */
         return '';
     }
+
+    function _should_lazy_load(id) {
+        return '' !== _find_base_path_if_needed( id );
+    }
     
     function _postpone_page_for_trans_end( id, args, from_uri, animation ) {
         _pending_page_info = {
@@ -4731,7 +4735,8 @@
             if ( _exist( route.target ) ) {
                 boot_loader();
             } else {
-                _setup_pending_boot_page( route.target, boot_loader );
+                _should_lazy_load( route.target )
+                    && _setup_pending_boot_page( route.target, boot_loader );
             }
         }
     
