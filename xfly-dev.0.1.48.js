@@ -149,8 +149,7 @@
  *
  *  2): back 请求后退操作;
  * </pre>
- */
-/**
+ *
  * Created by xong on 10/29/15.
  *
  * @dependents Zepto | jQuery
@@ -496,6 +495,7 @@
         };
     
         timer_id = setInterval( watcher, 1e3 );   /* 目前检测间隔为 1 秒 */
+
         watcher();
     
         return timer_id;
@@ -522,7 +522,7 @@
      */
     win.import_script = function(src, callback, delay) {
         /* TODO(XCL): callback 处理 */
-        if ( isNumber(callback) ) {
+        if ( isNumber( callback ) ) {
             delay       = callback;
             callback    = void 0;
         }
@@ -1100,7 +1100,7 @@
         if ( ! ( _STATE_ in page ) ) {
             page[ _STATE_ ] = INVALID_STATE;
         }
-        
+
         /* 正向周期 */
         if ( page[ _STATE_ ] < new_state ) {
             if ( INVALID_STATE === page[ _STATE_ ] )
@@ -1184,8 +1184,11 @@
                         _invoke_handler( page, _PAUSE );
     
                         /* ------------------------------------------------- */
+
+                        page[ _SCROLL_POSITION_Y_ ] = _obtain_scroll_position_y();
     
                         _invoke_handler( page, _DETACH );
+
                         save_page_elements.call( page,
                             collect_current_page_elements().remove() );
                     }
@@ -1709,6 +1712,7 @@
     function _request_go(id, args, from_uri, /* fromUser, zIndex, */animation) {
         if ( _has_page_trans_in_processing() ) {
             _postpone_page_for_trans_end( id, args, from_uri, animation );
+
             return;
         }
 
@@ -2117,7 +2121,7 @@
             next            = this;             /* 要前往的 page */
     
         var transit,
-            postponeCommitTrans = 0;            /* 标识是否为后置结束事务 */
+            postpone_commit_trans = 0;            /* 标识是否为后置结束事务 */
             
         /* ------------------------------------------------------------------ */
 
@@ -2131,7 +2135,7 @@
         /* Dispatching the page change before event */
         _on_before_page_change( current, next );
 
-        var fireAfterPageChangeEvent = function() {
+        var fire_after_page_change_event = function() {
             _on_after_page_change( current, next );
         };
 
@@ -2146,7 +2150,7 @@
             transit = _build_transition( _TRANSIT_NONE );
 
             /* 不启用动画, hidden 后也就无需 endTrans */
-            postponeCommitTrans = 0;
+            postpone_commit_trans = 0;
         } else {
             if ( animation ) {
                 animation = _resolve_fx( animation );
@@ -2162,7 +2166,7 @@
                                             : _FORWARD
                                         );
             
-            postponeCommitTrans = !! transit.rear;
+            postpone_commit_trans = !! transit.rear;
         }
 
         /* 是否启用动画(首个 page 不应该被加载动画) */
@@ -2196,7 +2200,7 @@
                 _hide(
                     current /*, _FROM_STACK_YES, end_trans_needed */,
                     transit,
-                    fireAfterPageChangeEvent
+                    fire_after_page_change_event
                 );
             }
         }
@@ -2235,12 +2239,12 @@
          * 如果 trans 为后置提交, 那么这里将不在处理, 注意 Rear 与 Front 效果呈现时序
          * 有可能不一致.
          */
-        if ( is_sandbox_mode() || ! postponeCommitTrans ) {
+        if ( is_sandbox_mode() || ! postpone_commit_trans ) {
             /* 标识 trans 完成 */
             _end_trans();
 
             /* 触发 onAfterPageChange 事件 */
-            fireAfterPageChangeEvent();
+            fire_after_page_change_event();
         }
         
         /*postCommitTrans || _endTrans();*/
@@ -2324,7 +2328,7 @@
         /* Dispatching the page change before event */
         _on_before_page_change( current, next );
 
-        var firePageChangeAfterEvent = function() {
+        var fire_page_change_after_event = function() {
             _on_after_page_change( current, next );
         };
 
@@ -2336,9 +2340,9 @@
                         ? bsr[ _OVERRIDDEN_ANIMATION ]
                         : _get_animation( current );
 
-        var transit             = _build_transition( animation, _BACKWARD ),
+        var transit                 = _build_transition( animation, _BACKWARD ),
             /* 标识是否为后置结束事务 */
-            postponeCommitTrans = !! transit.rear;
+            postpone_commit_trans   = !! transit.rear;
 
         _begin_trans();
 
@@ -2351,7 +2355,7 @@
         /* 隐藏当前 page */
         is_sandbox_mode() || _hide( current, transit
             /* _FROM_STACK_NO, */ /* endTransNeeded */ /* 1 */,
-            firePageChangeAfterEvent );
+            fire_page_change_after_event );
 
         /* Step 2: 恢复 get back 的目标 */
         _move_to_state( next, RESUMED );
@@ -2364,10 +2368,10 @@
         /* Step 3: 支持 history 则不需要手动更新 hash */
         _update_location( _BACKWARD, _current );
 
-        if ( is_sandbox_mode || ! postponeCommitTrans ) {
+        if ( is_sandbox_mode || ! postpone_commit_trans ) {
             _end_trans();
 
-            firePageChangeAfterEvent();
+            fire_page_change_after_event();
         }
         
         /*postponeCommitTrans*/ /*ALWAYS_POST_COMMIT_ON_BACK*/ /*|| _endTrans();*/
@@ -4159,7 +4163,7 @@
             /* 暂时使用 History API */
             if ( ! _is_same_page_spec( old_frag_spec, resolvedNewFragSpec ) ) {
                 _trigger_go_next( resolvedNewFragSpec, /* from_user */1, /* from_uri */1 );
-                /*_detect_backward_for_uri = _currentState;*/
+                // _detect_backward_for_uri = _currentState;
             }
         }
     }
@@ -4239,10 +4243,10 @@
      * @param viewport
      * @param enabled
      */
-    function set_gpu_accelerated_compositing_enabled(viewport, enabled) {
+    function set_gpu_accelerated_composite_enabled(viewport, enabled) {
         var flag = 'x-ui';
 
-        viewport = $(viewport);
+        viewport = $( viewport );
 
         if ( enabled )
             viewport.hasClass( flag ) || viewport.addClass( flag );
@@ -4268,6 +4272,9 @@
             saved_elements.appendTo( $x._viewport );
             _sandbox_dom_container[ layout_id ] = void 0;
         }
+
+        (_SCROLL_POSITION_Y_ in this)
+            && ( _restore_scroll_position( this[ _SCROLL_POSITION_Y_ ] ) );
     }
     
     function save_page_elements(saved_elements) {
@@ -4441,6 +4448,7 @@
         /**
          * 销毁当前 page & 返回上一级.
          * Note: 如果当前为根级则该方法不会被执行
+         *
          * @deprecated
          */
         finish:     finish,
@@ -4500,10 +4508,10 @@
      * @const
      * @type {number}
      */
-    var HASH    = 0,
+    var HASH    = 0,    /* Older browser */
         NATIVE  = 1,
         HYBRID  = 99,
-        SANDBOX = 999;
+        SANDBOX = 999;  /* Modern browser */
 
     /* 标识处理导航的模式 */
     var mode    = SANDBOX;
@@ -4583,7 +4591,7 @@
             return !! 1;
         }
         
-        /* 是否为站内常规 HyperLink */
+        /* 是否为站内常规 Hyper Link */
         if ( 0 === ( href || '' ).indexOf( '/' ) )
             _persistent_state_for_redirect( href );
     }
@@ -4719,7 +4727,11 @@
                         /* 是否为 F5 OR Control + F5 操作 */
                         if ( decodeURI( last_state )
                             !== _build_url_for_render( _current ) ) {
-                            //_persistent_state( _current_state, document.title, _build_url_for_render( _current ) );
+                            // _persistent_state(
+                            //     _current_state,
+                            //     document.title,
+                            //     _build_url_for_render( _current )
+                            // );
                         }
                     } else {
                         _persistent_state(
@@ -4754,9 +4766,12 @@
             && ( window.addEventListener( _LISTEN_WINDOW_POP_STATE, _pop_state_handler ) );
 
         /* Handle the scroll restoration after redirect if needed */
-        session_storage_supported
-            && scroll_restoration_supported
+        if ( scroll_restoration_supported ) {
+            history.scrollRestoration = 'manual';
+
+            session_storage_supported
                 && ( _perform_scroll_restore_after_redirect_if_needed() );
+        }
     
         /**
          * 差集
