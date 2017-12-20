@@ -18,6 +18,7 @@ This is SPA framework for the lite Web App with Modern browser.
 * Make your DOMs be Pretty and Clean
 * Reduce the resources request
 * Focus your things, no matter that routing、flow and MORE...
+* Lightweight(21KB compressed, gzip enabled be better)
 
 # Getting started
 **1: Prepare for your playground**
