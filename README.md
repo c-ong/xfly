@@ -17,8 +17,9 @@ This is SPA framework for the lite Web App with Modern browser.
 * State-driven programing(similar Native App)
 * Make your DOMs be Pretty and Clean
 * Reduce the resources request
+* Reduce costs(eg. CDN、Bandwidth...)
 * Focus your things, no matter that routing、flow and MORE...
-* Lightweight(21KB compressed, gzip enabled be better)
+* Lightweight(19KB compressed, gzip enabled be better)
 
 # Getting started
 **1: Prepare for your playground**
