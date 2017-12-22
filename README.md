@@ -32,7 +32,9 @@ Ngingx OR Apache
 
 **2: Define the page model**
 
-**IMPORTANT**: every DOMs of page, there are need to add the "page-ui" class at root element
+**IMPORTANT**: 
+* every DOMs of page, there are need to add the "page-ui" class at root element.
+* If you do not explicitly call **render** method or configure the **html** property, And the Xfly will sends an XHR request based on the current **path** to get the view.
 ```js
 $Page.define('you.path.name', {
 
