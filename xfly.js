@@ -154,7 +154,7 @@
  *
  * @dependents Zepto | jQuery
  */
-;!function(xfly) {
+;!function(xfly, undefined) {
     'use strict';
 
     /* 版本号 */
@@ -216,28 +216,11 @@
     /* 一些判断类型的函数 */
     var isUndefined = function(who) { return who === void 0 },
         isString    = function(who) { return 'string' === typeof who },
-        isArray     = $.isArray,
         isNumber    = function(who) { return ! isUndefined( who )
             && 'number' === typeof who },
-        isFunction  = $.isFunction,
         /* 判断是否为 DOM */
         isDom       = function(who) { return $.isPlainObject( who )
             && who.nodeType > 0 },
-
-        /* FIXME(XCL): 这里我们使用 JSON.stringify 给出的结果来计算 hash code, 数据结构较为简单 */
-        stringify   = JSON.stringify
-        /*(function(JSON) {
-            return (JSON && 'stringify' in JSON) ? JSON.stringify : function (map) {
-                var buffer = [];
-
-                for ( var key in map ) {
-                    if ( map.hasOwnProperty( key ) )
-                        buffer.push( key, ':', stringify( map[ key ] ) );
-                }
-
-                return '{' + buffer.join( ',' ) + '}';
-            }
-        })(JSON)*/,
 
         /* 抛出未实现异常, 仅用于开发期间防止无效的调用 */
         throwNiyError = function() { throw new Error( 'Not implement yet!' ) };
@@ -262,18 +245,18 @@
     }
 
     function _parse_args(url, data, success, error, dataType) {
-        if ( isFunction( data ) ) {
+        if ( $.isFunction( data ) ) {
             dataType    = error;
             error       = success;
             success     = data;
             data        = void 0;
         }
-        if ( ! isFunction( success ) ) {
+        if ( ! $.isFunction( success ) ) {
             dataType    = error;
             error       = dataType;
             success     = void 0;
         }
-        if ( ! isFunction( error ) ) {
+        if ( ! $.isFunction( error ) ) {
             dataType    = error;
             error       = void 0;
         }
@@ -291,7 +274,7 @@
     var $global             = {};
 
     /* 我们 xfly 开放的 fn 及 property */
-    _.undefined             = void 0;
+    _.undefined             = undefined;
     _.emptyFn               = emptyFn;
     _.noop                  = emptyFn;
     _.win                   = win;
@@ -302,13 +285,8 @@
     /* 用于判断类型的函数 */
     _.isUndefined           = isUndefined;
     _.isString              = isString;
-    _.isArray               = isArray;
-    _.isFunction            = isFunction;
     _.isNumber              = isNumber;
     _.isDom                 = isDom;
-
-    /* 低版本可能没有提供 JSON.stringify */
-    _.stringify             = stringify;
 
     _.throwNiyError         = throwNiyError;
 
@@ -332,28 +310,28 @@
      * @type {DomElement}
      * @private
      */
-    _._viewport        = void 0;
+    _._viewport             = void 0;
 
     /* --------------------------------------------------------------------- */
 
     /* Extend */
     /* 可见 DOM 的根节点 */
-    _.ID_VIEWPORT      = 'xfly_viewport';
+    _.ID_VIEWPORT           = 'xfly_viewport';
     /* Dialog 元素 */
-    _.ID_DIALOG        = 'xfly_dialog';
-    _.ID_DIALOG_MASK   = 'dialog_mask';
+    _.ID_DIALOG             = 'xfly_dialog';
+    _.ID_DIALOG_MASK        = 'dialog_mask';
     /* FIXME(XCL): 由于布局未知原因导致动画不理想, 这里暂时不在嵌套 DOM */
-    _.ID_FRAGMENT_ROOT = 'xfly_pages';
+    _.ID_FRAGMENT_ROOT      = 'xfly_pages';
 
     /* Layer manager */
     /* hasTopLayer */
 
-    _.DIALOG_WRAPPER  = 'dialog_wrapper';
-    /* DIALOG_STACK  = 'dialog_stack', */
-    _.DIALOG_MASK     = 'dialog_mask';
-    _.DIALOG          = 'dialog';
-    _.FRAGMENT        = 'page';
-    _.FRAGMENTS       = 'page_root';
+    _.DIALOG_WRAPPER        = 'dialog_wrapper';
+    /* DIALOG_STACK         = 'dialog_stack', */
+    _.DIALOG_MASK           = 'dialog_mask';
+    _.DIALOG                = 'dialog';
+    _.FRAGMENT              = 'page';
+    _.FRAGMENTS             = 'page_root';
 
     /* --------------------------------------------------------------------- */
 
@@ -390,7 +368,7 @@
      * @returns {*}
      * @private
      */
-    _._alloZIndex = function(component) {
+    _.alloZIndex = function(component) {
         if ( ! component || ! zIndexes[ component ] )
             throw new TypeError( 'Invalid component' );
 
@@ -417,11 +395,11 @@
      * @returns {string}
      * @private
      */
-    _._idSelector = function(id) {
+    _.idSelector = function(id) {
         return '#' + id;
     };
 
-    _._isShowing = function(z_obj/*Zepto*/) {
+    _.isShowing = function(z_obj/*Zepto*/) {
         return z_obj && 'none' !== z_obj.css( 'display' );
     };
 
@@ -599,15 +577,9 @@
     /* @type {SessionStorage} Shortcut of the sessionStorage object */
     var ss;
     
-    var SESSION_CURRENT_STATE   = '!#';
+    var SESSION_CURRENT_STATE               = '!#';
 
-    var win                                 = $x.win,
-
-        _alloZIndex                         = $x._alloZIndex,
-        _idSelector                         = $x._idSelector,
-        isShowing                           = $x._isShowing,
-        isString                            = $x.isString,
-        isPlainObject                       = $.isPlainObject;
+    var win                                 = $x.win;
 
     /* 标识 Env 是否支持 History API */
     var history_api_supported               = 'onpopstate' in win,
@@ -898,7 +870,7 @@
         _FRAGMENT_TEMPLATE = $( '<div class="xfly-page"></div>' );
 
         /* Page 根节点 */
-        $x._viewport = $( _idSelector( $x.ID_VIEWPORT ) );
+        $x._viewport = $( $x.idSelector( $x.ID_VIEWPORT ) );
     }
 
     function _ensure() {
@@ -1022,7 +994,7 @@
     }
 
     function _trigger_reload(page, args) {
-        if ( isPlainObject( args ) )
+        if ( $.isPlainObject( args ) )
             _override_args( _get_id( page ), args );
 
         if ( ! page[ _FLAG_INSTANTIATED ] )
@@ -1039,7 +1011,7 @@
             var layout = get_layout.call( page );
     
             if ( layout.length ) {
-                if ( $x._isShowing( layout ) ) {
+                if ( $x.isShowing( layout ) ) {
                     _perform_reload( page );
                 } else {
                     _set_up_post_reload( page );
@@ -1714,11 +1686,11 @@
         }
         
         /* id, args, ?, ? */
-        if ( isPlainObject( args ) ) {
+        if ( $.isPlainObject( args ) ) {
             _override_args( id, args );
         }
         /* id, animation */
-        else if ( isString( args ) ) {
+        else if ( $x.isString( args ) ) {
             animation   = args;
             from_uri    = args = void 0;
         }
@@ -1732,7 +1704,7 @@
         }
 
         /* id, args, animation */
-        if ( isString( from_uri ) ) {
+        if ( $x.isString( from_uri ) ) {
             animation   = from_uri;
             from_uri    = void 0;
         }
@@ -1838,7 +1810,7 @@
      */
     function _flatten_args(args) {
         try {
-            return $x.stringify( sort( args ) );
+            return JSON.stringify( sort( args ) );
         } catch (ignored) {
             return void 0;
         }
@@ -2524,7 +2496,7 @@
             action  = trigger   [ 'action'  ];
 
             /* 如果 action 为 fn 则直接执行 */
-            $x.isFunction( action ) && ( action() );
+            $.isFunction( action ) && ( action() );
         }
     }
 
@@ -2791,7 +2763,7 @@
     function _settle_handlers(id, handlers) {
         var map = _handlers[ id ] = {};
 
-        if ( isPlainObject( handlers ) ) {
+        if ( $.isPlainObject( handlers ) ) {
             SUPPORTED_HANDLERS.forEach( function ( fn ) {
                 (fn in handlers) && (map[ fn ] = handlers[ fn ]);
             } );
@@ -2814,7 +2786,7 @@
         );
 
         /* 赋于新的 stack index, 实际上就是 z-index */
-        derive[ _STACK_INDEX_ ] = _alloZIndex( $x.FRAGMENT );
+        derive[ _STACK_INDEX_ ] = $x.alloZIndex( $x.FRAGMENT );
         /* XXX: DOM 节点, 如果为祖先级实例则该 DOM 只会被用于 clone */
         derive[ _EL_ ] = {};
         /*(derive[ _EL_ ] = {})[ _LAYOUT_ ] = _FRAGMENT_TEMPLATE.clone()[ 0 ];*/
@@ -2945,7 +2917,7 @@
             var layout = get_layout();
             
             return layout.length
-                && isShowing( layout );
+                && $x.isShowing( layout );
         };
     
         /**
@@ -2955,7 +2927,7 @@
          * @returns {Page}
          */
         _.setArgs = function(args) {
-            if ( isPlainObject( args ) ) {
+            if ( $.isPlainObject( args ) ) {
                 var merging = this.getArgs() || {} ;
                 
                 Object.keys( args ).forEach( function (key) {
@@ -3224,7 +3196,7 @@
      */
     function _register(id, /* properties */props) {
         /* TODO(XCL): validate the view id */
-        if ( ! isString( id ) )
+        if ( ! $x.isString( id ) )
             throw Error( "Invalid id(" + id + ")" );
 
         if ( $x.isUndefined( props ) )
@@ -3250,7 +3222,7 @@
             && !! props[ _MULTIPLE_INSTANCES ];
 
         /* 分配一个 idx 实际上就是 z-index */
-        var stackIdx = _alloZIndex( $x.FRAGMENT ),
+        var stackIdx = $x.alloZIndex( $x.FRAGMENT ),
             requires;
 
         /**
@@ -3260,7 +3232,7 @@
          */
 
         /* 处理依赖项 */
-        isPlainObject( props )
+        $.isPlainObject( props )
             && _REQUIRES in props
                 && ( requires = _resolve_requires( props.requires ) );
 
@@ -3285,7 +3257,7 @@
         page[ _EL_ ] = {};
 
         /* 标题 */
-        isString( props[ _TITLE ] )
+        $x.isString( props[ _TITLE ] )
             && (page[ _TITLE ] = props[ _TITLE ]);
 
         /* 解析后的 hash, xfly.ui.home -> xfly/ui/home */
@@ -3670,7 +3642,7 @@
      * @private
      */
     function _is_same_args(l, r) {
-        return $x.stringify( l ) === $x.stringify( r );
+        return JSON.stringify( l ) === JSON.stringify( r );
     }
 
     /**
@@ -4306,7 +4278,7 @@
      */
     $x.page = function(id, props) {
         /* TODO: alias, short */
-        if ( $x.isArray( id ) ) {
+        if ( $.isArray( id ) ) {
             var pages = [];
             
             props = props || {};

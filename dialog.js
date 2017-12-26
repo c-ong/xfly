@@ -9,10 +9,27 @@
 !function($x/*, undefined*/) {
     'use strict';
 
-    var isArray     = $x.isArray,
-        isFunction  = $x.isFunction,
+    var isArray     = $.isArray,
+        isFunction  = $.isFunction,
         isUndefined = $x.isUndefined,
-        _idSelector = $x._idSelector;
+        _idSelector = $x.idSelector;
+
+
+    /* NOTE: 低版本可能没有提供 JSON.stringify */
+    /* FIXME(XCL): 这里我们使用 JSON.stringify 给出的结果来计算 hash code, 数据结构较为简单 */
+    var stringify   = JSON.stringify
+        /*(function(JSON) {
+            return (JSON && 'stringify' in JSON) ? JSON.stringify : function (map) {
+                var buffer = [];
+
+                for ( var key in map ) {
+                    if ( map.hasOwnProperty( key ) )
+                        buffer.push( key, ':', stringify( map[ key ] ) );
+                }
+
+                return '{' + buffer.join( ',' ) + '}';
+            }
+        })(JSON)*/;
 
     /**
      * 全部 Dialog
@@ -56,20 +73,20 @@
     }
 
     function _ensure_dialog_base() {
-        _dialog_root || /*$( _idSelector( ID_DIALOG ) ).length || */_prepare_dialog();
+        _dialog_root || /*$( idSelector( ID_DIALOG ) ).length || */_prepare_dialog();
     }
 
     function _prepare_dialog() {
         _DIALOG_WRAPPER_TEMPLATE =
             $( '<div class="dialog-wrapper" id="dialog_wrapper"><div id="dialog_body"></div></div>' );
 
-        _dialog_root = $( _idSelector( $x.ID_DIALOG ) );
-        _dialog_mask = $( _idSelector( $x.ID_DIALOG_MASK ) );
+        _dialog_root = $( idSelector( $x.ID_DIALOG ) );
+        _dialog_mask = $( idSelector( $x.ID_DIALOG_MASK ) );
 
         _dialog_mask.on( 'click', _handle_mask_tap );
 
-        _dialog_root.css( 'z-index', $x._alloZIndex( $x.DIALOG ) );
-        _dialog_mask.css( 'z-index', $x._alloZIndex( $x.DIALOG_MASK ) );
+        _dialog_root.css( 'z-index', $x.alloZIndex( $x.DIALOG ) );
+        _dialog_mask.css( 'z-index', $x.alloZIndex( $x.DIALOG_MASK ) );
     }
 
     /**
@@ -100,10 +117,10 @@
 
         _ensure_dialog_base();
 
-        isArray( cancelable ) && (actions = cancelable, cancelable = void 0);
+        $.isArray( cancelable ) && (actions = cancelable, cancelable = void 0);
 
         /* 分配一个 id 实际上就是 z-index */
-        var stackId = $x._alloZIndex( $x.DIALOG_WRAPPER );
+        var stackId = $x.alloZIndex( $x.DIALOG_WRAPPER );
 
         /* 通过 clone 来快速获得 DOM 元素 */
         var wrapper = _DIALOG_WRAPPER_TEMPLATE.clone();
@@ -166,7 +183,7 @@
     function cancel() {
         var el = this._el_;
 
-        if ( ! $x._isShowing( el.wrapper ) )
+        if ( ! $x.isShowing( el.wrapper ) )
             return;
 
         ! el.dismissed && _hide_wrapper_only.call( this );

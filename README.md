@@ -99,6 +99,7 @@ See the [examples](https://github.com/c-ong/xfly/tree/master/examples) dir.
 
 # Further Features
 * Scroll restoration supported
+* Desktop browser supported(like IE);
 
 
 # Legacy version is here(Hash based)
