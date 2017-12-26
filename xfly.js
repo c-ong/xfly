@@ -288,56 +288,44 @@
     }
 
     /* Super global */
-    var $global     = {};
+    var $global             = {};
 
     /* 我们 xfly 开放的 fn 及 property */
-    _.undefined     = void 0;
-    _.emptyFn       = emptyFn;
-    _.noop          = emptyFn;
-    _.win           = win;
+    _.undefined             = void 0;
+    _.emptyFn               = emptyFn;
+    _.noop                  = emptyFn;
+    _.win                   = win;
 
     /* 是否为开发模式(待移除) */
-    _.dev           = !! 0;
+    _.dev                   = !! 0;
 
     /* 用于判断类型的函数 */
-    _.isUndefined   = isUndefined;
-    _.isString      = isString;
-    _.isArray       = isArray;
-    _.isFunction    = isFunction;
-    _.isNumber      = isNumber;
-    _.isDom         = isDom;
+    _.isUndefined           = isUndefined;
+    _.isString              = isString;
+    _.isArray               = isArray;
+    _.isFunction            = isFunction;
+    _.isNumber              = isNumber;
+    _.isDom                 = isDom;
 
     /* 低版本可能没有提供 JSON.stringify */
-    _.stringify     = stringify;
+    _.stringify             = stringify;
 
-    _.throwNiyError = throwNiyError;
+    _.throwNiyError         = throwNiyError;
 
     /* HTTP 请求 */
-    _.get           = get;
-    _.post          = post;
+    _.get                   = get;
+    _.post                  = post;
 
     /* Runtime Env */
-    _.os            = os;
-    _.browser       = browser;
+    _.os                    = os;
+    _.browser               = browser;
 
     /* Animation timing(Default) */
     _.cubic_bezier          = 'cubic-bezier(.4, 0, .2, 1)';
     _.brisk_cubic_bezier    = 'cubic-bezier(.1,.5,.1,1)';
-    
-    _.ORIGIN_URL            = location.href;
 
-    /* 提供了短名方法,用于访问 console 方法 */
-    /*
-    log: console ? function(msg) {
-        xfly.dev && console.log( msg )
-    } : emptyFn,
-    dir: console ? function(obj) {
-        xfly.dev && console.dir( obj )
-    } : emptyFn,
-    error: console ? function(msg) {
-        xfly.dev && console.error( msg )
-    } : emptyFn
-    */
+    /* Used for WeChat Auth */
+    _.ORIGIN_URL            = location.href;
 
     /**
      * The root of UIs
@@ -613,13 +601,13 @@
     
     var SESSION_CURRENT_STATE   = '!#';
 
-    var win             = $x.win,
+    var win                                 = $x.win,
 
-        _alloZIndex     = $x._alloZIndex,
-        _idSelector     = $x._idSelector,
-        isShowing       = $x._isShowing,
-        isString        = $x.isString,
-        isPlainObject   = $.isPlainObject;
+        _alloZIndex                         = $x._alloZIndex,
+        _idSelector                         = $x._idSelector,
+        isShowing                           = $x._isShowing,
+        isString                            = $x.isString,
+        isPlainObject                       = $.isPlainObject;
 
     /* 标识 Env 是否支持 History API */
     var history_api_supported               = 'onpopstate' in win,
@@ -634,11 +622,11 @@
      * @const
      * @private
      */
-    var _FRAGMENT_HASH_STRIPPER          = '#!',
+    var _FRAGMENT_HASH_STRIPPER             = '#!',
 
         /* 这是一个特殊的 hash 它用于后退操作 */
-        _MAGIC_BACK_HASH                 = _FRAGMENT_HASH_STRIPPER + '-',
-        _SCROLL_RESTORATION_FOR_REDIRECT = '#xsrfr';
+        _MAGIC_BACK_HASH                    = _FRAGMENT_HASH_STRIPPER + '-',
+        _SCROLL_RESTORATION_FOR_REDIRECT    = '#xsrfr';
     
     /**
      * Used for history API
@@ -1062,7 +1050,7 @@
 
     /* --------------------------------------------------------------------- */
 
-    /* NOTE(XCL): This just reference the android Fragment state. */
+    /* NOTE(XCL): This is reference the android Fragment state. */
     var INVALID_STATE   = -1,
         INITIALIZING    = 0, /* Not yet created. */
         CREATED         = 1, /* Created. */
@@ -1097,9 +1085,9 @@
         //    _state_to_string( page[ _STATE_ ] ),
         //    _state_to_string( new_state ) );
         
-        if ( ! ( _STATE_ in page ) ) {
+        if ( ! ( _STATE_ in page ) )
             page[ _STATE_ ] = INVALID_STATE;
-        }
+
 
         /* 正向周期 */
         if ( page[ _STATE_ ] < new_state ) {
@@ -1374,6 +1362,7 @@
             return layout_id && layout_id in _sandbox_dom_container;
         } else {
             var layout = get_layout.call( page );
+
             return layout.length && layout[ 0 ].parentNode && '' !== layout.html();
         }
     }
@@ -1674,12 +1663,12 @@
      * @private
      */
     function _build_special_hash_by_page(page) {
-        var fragSpec = {};
+        var frag_spec = {};
 
-        fragSpec[ _ROUTE ]      = page[ _ROUTE ];
-        fragSpec[ _ROUTE_ARGS ] = page[ _ROUTE_ARGS ];
+        frag_spec[ _ROUTE ]      = page[ _ROUTE ];
+        frag_spec[ _ROUTE_ARGS ] = page[ _ROUTE_ARGS ];
 
-        return _build_special_hash( fragSpec );
+        return _build_special_hash( frag_spec );
     }
 
     /* Note: Used for Hash mode */
@@ -3360,13 +3349,13 @@
      * @private
      */
     function _register_triggers_if_necessary(frag, props) {
-        var triggerDirective = props['trigger'];
+        var trigger_directive = props['trigger'];
 
-        if ( triggerDirective ) {
+        if ( trigger_directive ) {
             /* TODO(XCL): show:observable */
-            var on      = triggerDirective['on'],
-                state   = triggerDirective['state'],
-                action  = triggerDirective['action'];
+            var on      = trigger_directive['on'],
+                state   = trigger_directive['state'],
+                action  = trigger_directive['action'];
 
             if ( on && state && action ) {
                 var host    = _triggers[on];
@@ -3387,7 +3376,7 @@
                 };
 
                 /* 不设置 once 默认指只触发一次 */
-                triggerDirective[ 'once' ]
+                trigger_directive[ 'once' ]
                         && (trigger['once'] = !! 1);/* listen once */
 
                 stack.push( trigger );
@@ -3934,13 +3923,13 @@
         if ( ! _delayed_route_change_event )
             return;
 
-        var oldFragSpec = _delayed_route_change_event.oldInnerRoute,
-            newRawRoute = _delayed_route_change_event.newRawRoute;
+        var old_frag_spec = _delayed_route_change_event.oldInnerRoute,
+            new_raw_route = _delayed_route_change_event.newRawRoute;
 
         /* 标记 delayed event 已处理 */
         _delayed_route_change_event = void 0;
 
-        _handle_navigation_change( oldFragSpec, newRawRoute );
+        _handle_navigation_change( old_frag_spec, new_raw_route );
     };
 
     /**
@@ -4119,19 +4108,19 @@
         /* TODO(XCL): Checking for URL changed event with interval fn */
 
         /* 变更之前的 FragSpec */
-        var oldFragSpec = _get_current_page_spec(),
+        var old_frag_spec = _get_current_page_spec(),
             /* 当前 Browser 中的 hash */
-            newRawRoute = _get_navigation();
+            new_raw_route = _get_navigation();
 
         /* TODO(XCL): Check for transaction timed out... */
         if ( _has_page_trans_in_processing() ) {
             /* TODO(XCL): postDelayed */
-            _post_delayed_navigation_change_event( oldFragSpec, newRawRoute );
+            _post_delayed_navigation_change_event( old_frag_spec, new_raw_route );
 
             return;
         }
 
-        _handle_navigation_change( oldFragSpec, newRawRoute );
+        _handle_navigation_change( old_frag_spec, new_raw_route );
     };
 
     /**
@@ -4157,12 +4146,12 @@
         /* 是否为 page hash */
         else if ( _is_page_route( new_raw_hash ) ) {
             /* TODO(XCL): Filtering and Sanitizing */
-            var resolvedNewFragSpec = _resolve_frag_spec( new_raw_hash );
+            var resolved_new_frag_spec = _resolve_frag_spec( new_raw_hash );
 
             /* 是否 hash 真的需要更新 */
             /* 暂时使用 History API */
-            if ( ! _is_same_page_spec( old_frag_spec, resolvedNewFragSpec ) ) {
-                _trigger_go_next( resolvedNewFragSpec, /* from_user */1, /* from_uri */1 );
+            if ( ! _is_same_page_spec( old_frag_spec, resolved_new_frag_spec ) ) {
+                _trigger_go_next( resolved_new_frag_spec, /* from_user */1, /* from_uri */1 );
                 // _detect_backward_for_uri = _currentState;
             }
         }
