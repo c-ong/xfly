@@ -55,7 +55,10 @@ $Page.define('you.path.name', {
     },
 
     onRendered: function() {
-
+        // Tip: Easy way to get the query string
+        var args = this.getArgs();
+        
+        console.log( 'The key values is ' + args[ 'key' ] );
     },
     
     onResume: function () {
