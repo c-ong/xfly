@@ -102,6 +102,7 @@ See the [examples](https://github.com/c-ong/xfly/tree/master/examples) dir.
 
 # Further Features
 * Scroll restoration supported
+* Failure handle while fetch the view
 * Desktop browser supported(like IE);
 
 
