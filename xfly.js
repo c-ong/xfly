@@ -411,7 +411,8 @@
      * @param {Element} trigger input 元素,如: textarea, input
      */
     win.hide_keyboard = function(trigger) {
-        isDom( trigger ) && 'blur' in trigger && trigger.blur();
+        isDom( trigger ) && trigger[ 'blur' ] && trigger.blur();
+
         document.body.focus();
     };
 
@@ -582,10 +583,10 @@
     var win                                 = $x.win;
 
     /* 标识 Env 是否支持 History API */
-    var history_api_supported               = 'onpopstate' in win,
+    var history_api_supported               = typeof win.onpopstate !== 'undefined',
         session_storage_supported           = !! 0,
         persistent_session_stack_idx_offset = 0,
-        scroll_restoration_supported        = 'scrollRestoration' in history;
+        scroll_restoration_supported        = typeof history.scrollRestoration !== 'undefined';
 
     /**
      * 以 #! 打头的 hash 可识别为我们的 page 导向.
@@ -848,7 +849,7 @@
      * @private
      */
     function _exist(id) {
-        return id in _pages;
+        return typeof _pages[ id ] !== 'undefined';
     }
 
     /**
@@ -972,7 +973,7 @@
         page[_RENDER_CALLED_] = !! 0;
         
         _invoke_handler_with_share_mode( page, _ON_RELOAD );
-    
+
         /* 若 Page 未实现 onReload handler 则这里作默认处理 */
         if ( ! page[_RENDER_CALLED_] ) {
             _invoke_render( page, {
@@ -1057,7 +1058,7 @@
         //    _state_to_string( page[ _STATE_ ] ),
         //    _state_to_string( new_state ) );
         
-        if ( ! ( _STATE_ in page ) )
+        if ( ! ( typeof page[ _STATE_ ] !== 'undefined' ) )
             page[ _STATE_ ] = INVALID_STATE;
 
 
@@ -1189,7 +1190,8 @@
         for ( var idx in ordered_handlers ) {
             handler_name = METHOD_HANDLERS_MAPPING[ ordered_handlers[ idx ] ];
     
-            handler_name in registered_handlers
+            // handler_name in registered_handlers
+            registered_handlers[ handler_name ]
                 && registered_handlers[ handler_name ]
                     .apply( page, 3 in arguments ? arguments.slice( 2 ) : [] );
         }
@@ -1208,10 +1210,13 @@
      * @private
      */
     function _invoke_handler_with_share_mode(page, handler_name) {
+        // _invoke_render( page, handler_name );
+
         var registered_handlers = _get_handlers( page );
-    
+
         registered_handlers
-            && handler_name in registered_handlers
+            && registered_handlers[ handler_name ]
+            // && handler_name in registered_handlers
             && registered_handlers[ handler_name ]
                 .apply( page, 3 in arguments ? arguments.slice( 2 ) : [] );
     }
@@ -1305,7 +1310,8 @@
         var handlers = _get_handlers( page );
 
         handlers
-            && handler in handlers
+            //&& handler in handlers
+            && handlers[ handler ]
                 && handlers[ handler ]
                     .call( page, get_layout.call( page ) );
     }
@@ -1331,7 +1337,7 @@
             var layout_id = get_layout_id.call( page );
             
             /* NOTE(XCL): 值为 undefined 时, 标识 page 的内容已通过网络加载完成. */
-            return layout_id && layout_id in _sandbox_dom_container;
+            return layout_id && typeof _sandbox_dom_container[ layout_id ] !== 'undefined';
         } else {
             var layout = get_layout.call( page );
 
@@ -1512,7 +1518,7 @@
      * @private
      */
     function _has_back_stack_records() {
-        return 0 in _back_stack;
+        return _back_stack.length;
     }
 
     /* 标识操作从 URI 触发 */
@@ -1737,7 +1743,7 @@
         var ordered = void 0;
         var keys    = Object.keys( args );
 
-        if ( ! (0 in keys) ) {
+        if ( ! keys.length ) {
             throw new Error( "Args can't be null#" + args );
         }
 
@@ -2765,7 +2771,8 @@
 
         if ( $.isPlainObject( handlers ) ) {
             SUPPORTED_HANDLERS.forEach( function ( fn ) {
-                (fn in handlers) && (map[ fn ] = handlers[ fn ]);
+                handlers[ fn ] && (map[ fn ] = handlers[ fn ]);
+                // (fn in handlers) && (map[ fn ] = handlers[ fn ]);
             } );
         }
     }
@@ -2832,9 +2839,9 @@
         /* ----------------------------------------------------------------- */
 
         /* HTML 片段或 URL，如果已指定该字段 */
-        if ( _HTML in source )
+        if ( source[ _HTML ] )
             clone[ _HTML ] = source[ _HTML ];
-        else if ( _URL in source )
+        else if ( source[ _URL ] )
             clone[ _URL ] = source[ _URL ];
 
         return clone;
@@ -2880,7 +2887,7 @@
             this[ _RENDER_CALLED_ ] = !! 1;
 
             /* 是否能够立刻请求进行 render 操作 */
-            var immediate = is_first_page || data && _HTML in data;
+            var immediate = is_first_page || data && data[ _HTML ];
 
             /* Before rendering */
             immediate && pre_render.call( this, data );
@@ -2888,7 +2895,7 @@
             /* Rendering */
             immediate
                 ? _render_with_html.call( this, data )
-                : ( _URL in data && _render_with_url.call( this, data ) );
+                : ( data[ _URL ] && _render_with_url.call( this, data ) );
 
             /* After rendered */
             immediate && rendered.call( this, data );
@@ -3085,7 +3092,7 @@
     /* ------------------------ Page class } ---------------------------- */
 
     function _is_new(frag) {
-        return ! ( _ID in frag );
+        return ! ( typeof frag[ _ID ] !== 'undefined' );
     }
 
     /* 指代将会在代码加载完成后 OR 某个特定事件结束后才呈现的 page */
@@ -3218,7 +3225,7 @@
 
         /* TODO: 这样会造成祖级元素无法被合理使用 */
         /* 是否为祖先级实例 */
-        var isAncestor = _MULTIPLE_INSTANCES in props
+        var isAncestor =  props[ _MULTIPLE_INSTANCES ]
             && !! props[ _MULTIPLE_INSTANCES ];
 
         /* 分配一个 idx 实际上就是 z-index */
@@ -3233,7 +3240,7 @@
 
         /* 处理依赖项 */
         $.isPlainObject( props )
-            && _REQUIRES in props
+            && props[ _REQUIRES ]
                 && ( requires = _resolve_requires( props.requires ) );
 
         /* ----------------------------------------------------------------- */
@@ -3264,7 +3271,7 @@
         page[ _ROUTE ] = _make_id_as_xpath_route( id );
 
         /* To retain the arguments if present. */
-        _ROUTE_ARGS in props
+        props[ _ROUTE_ARGS ]
             && (page[ _ROUTE_ARGS ] = props[ _ROUTE_ARGS ]);
 
         /* 是否支持多实例, 如支持多实例则祖先仅终不会被添加至 DOM 中 */
@@ -3281,10 +3288,10 @@
         /* ----------------------------------------------------------------- */
 
         /* 填充 HTML 片段，如果已指定该字段 */
-        if ( _HTML in props ) {
+        if ( props [ _HTML ] ) {
             page[ _HTML ] = props[ _HTML ];
             // _invoke_render( page, page );
-        } else if ( _URL in props ) {
+        } else if ( props[ _URL ] ) {
             page[ _URL ] = props[ _URL ];
             // _invoke_render( page, page );
         }
@@ -3387,7 +3394,7 @@
             }
 
             /* 如果有只触发一次的 trigger 被移除, 则需要同步至 _triggers */
-            origin.length != result.length
+            origin.length !== result.length
                 && (_triggers[ host ] = host[ state ] = origin);
         }
 
@@ -3445,7 +3452,7 @@
      * @private
      */
     function _settle_animation(page, props) {
-        if ( ! ( _ANIMATION in props ) )
+        if ( ! ( props[ _ANIMATION ] ) )
             return;
 
         page[ _ANIMATION ] = _resolve_fx( props[ _ANIMATION ] );
@@ -3788,7 +3795,7 @@
      * @private
      */
     function _check_state_event(event) {
-        return event['state'] && _BSR_IDX in event['state'];
+        return event['state'] && typeof event['state'][ _BSR_IDX ] !== 'undefined';
     }
 
     /* TODO(XCL): 如果跳转到其它页面当后退至当前页面则可能 stack 丢失(RELOAD) */
@@ -4040,7 +4047,7 @@
                 
                 explain = pair.split( '[]=' );
                 
-                if ( explain.length === 2 && ! ( explain[ 0 ] in array_typed ) ) {
+                if ( explain.length === 2 && ! ( array_typed [ explain[ 0 ] ] ) ) {
                     array_typed[ explain[ 0 ] ] = 1;
                 }
             }
@@ -4234,7 +4241,7 @@
             _sandbox_dom_container[ layout_id ] = void 0;
         }
 
-        (_SCROLL_POSITION_Y_ in this)
+        ( ( typeof this[ _SCROLL_POSITION_Y_ ] ) !== 'undefined' )
             && ( _restore_scroll_position( this[ _SCROLL_POSITION_Y_ ] ) );
     }
     

@@ -44,6 +44,7 @@ local.properties
 # XCL stuff
 ca
 /captures
+/node_modules
 /report-example
 /push-messaging-define
 /webview-interface.js
