@@ -95,7 +95,7 @@ Be careful the Browser Cache, good luck for YOUR.
 
 
 # Examples
-See the [examples](https://github.com/c-ong/xfly/tree/master/examples) dir.
+See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples](https://github.com/c-ong/xfly/tree/master/examples) dir.
 
 ![Xfly](https://github.com/c-ong/xfly/blob/master/screenshots/xfly.png?raw=true)
 

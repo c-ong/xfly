@@ -1,7 +1,4 @@
 @charset "UTF-8";
-/* CDN 资源主机地址 */
-/* 往往用于开发环境(即自己的机器) */
-/* 资源的基本路径 */
 
 * {
     box-sizing: border-box;
