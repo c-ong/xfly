@@ -158,7 +158,7 @@
     'use strict';
 
     /* 版本号 */
-    var VERSION = '0.1.48';
+    var VERSION = '0.1.49';
 
     var _       = xfly || {};
     
