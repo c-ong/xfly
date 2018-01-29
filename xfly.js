@@ -4267,7 +4267,7 @@
         var y = ss.getItem( _SCROLL_RESTORATION_FOR_REDIRECT );
 
         if ( y ) {
-            ss.remove( _SCROLL_RESTORATION_FOR_REDIRECT );
+            ss.removeItem( _SCROLL_RESTORATION_FOR_REDIRECT );
 
             _restore_scroll_position( y );
         }
