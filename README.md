@@ -19,7 +19,7 @@ This is SPA framework for the lite Web App with Modern browser.
 * Reduce the resources request
 * Reduce costs(eg. CDN、Bandwidth...)
 * Focus your things, no matter that routing、flow and MORE...
-* Lightweight(19KB compressed, gzip enabled be better)
+* Lightweight(16KB compressed, gzip enabled be better)
 
 # Getting started
 **1: Prepare for your playground**
@@ -28,7 +28,7 @@ This is SPA framework for the lite Web App with Modern browser.
 ```smartyconfig
 Ngingx OR Apache
 ```
-* Zepto or jQuery lib are required
+* Zepto lib are required
 
 **2: Define the page model**
 

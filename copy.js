@@ -13,7 +13,7 @@
  * e.g:
  *
  * 1: 定义一个 page:
- * 
+ *
  *
  * $Page.define(
  *      'namespace.views.about',      // page 唯一标识，必选项
@@ -155,17 +155,63 @@
  * @dependents Zepto | jQuery
  */
 ;!function(xfly, undefined) {
-    "use strict";
+    'use strict';
 
     /* 版本号 */
-    var VERSION = '0.1.50';
+    var VERSION = '0.1.48';
 
     var _       = xfly || {};
-    
+
     var win     = window;
     var doc     = win.document;
 
     var emptyFn = $.noop;
+
+    var ua      = navigator.userAgent.toLowerCase(),
+        os      = {},
+        browser = {},
+
+        /* 这取自于 zepto 以后可能完全使用 zepto.detect */
+        android = ua.match( /(Android);?[\s\/]+([\d.]+)?/ig ),
+        ipad    = ua.match( /(iPad).*OS\s([\d_]+)/ig ),
+        ipod    = ua.match( /(iPod)(.*OS\s([\d_]+))?/ig ),
+        iphone  = ! ipad && ua.match(/( iPhone\sOS)\s([\d_]+)/ig ),
+
+        /* 是否为微信环境 */
+        wechat  = ua.match( /MicroMessenger\/([\d.]+)/ig ),
+        /* 是否为 Tencent X 系统浏览器(目前为 X5) */
+        qqx5    = ua.match( /MQQBrowser\/([\d.]+)/ig );
+
+    if ( android ) {
+        os.android  = !! 1;
+        os.version  = android[ 2 ];
+
+        /* FIXME(XCL): 考虑到大部分国产 Android 设备 CSS Animation 性能不佳, 固此
+         *             禁用部分 FX
+         */
+        /*$.fx.off    = !! 1;*/
+    } else {
+        os.android = !! 0;
+    }
+
+    if ( iphone && ! ipod ) {
+        os.ios = os.iphone = !! 1;
+        iphone[ 2 ] && ( os.version = iphone[ 2 ].replace( /_/g, '.' ) );
+    }
+    if ( ipad ) {
+        os.ios = os.ipad = !! 1;
+        ipad[ 2 ] && ( os.version = ipad[ 2 ].replace( /_/g, '.' ) );
+    }
+    if ( ipod ) {
+        os.ios = os.ipod = !! 1;
+        ipod[ 3 ] && ( os.version = ipod[ 3 ] ? ipod[ 3 ].replace( /_/g, '.' ) : null );
+    }
+    'ios' in os || ( os.ios = !! 0 );
+
+    /* 是否运行于微信 WebView 环境 */
+    browser.wechat  = !! wechat;
+    /* QQ X5 浏览器 */
+    browser.qqx5    = !! qqx5;
 
     /* 一些判断类型的函数 */
     var isUndefined = function(who) { return who === void 0 },
@@ -248,6 +294,14 @@
     _.get                   = get;
     _.post                  = post;
 
+    /* Runtime Env */
+    _.os                    = os;
+    _.browser               = browser;
+
+    /* Animation timing(Default) */
+    _.cubic_bezier          = 'cubic-bezier(.4, 0, .2, 1)';
+    _.brisk_cubic_bezier    = 'cubic-bezier(.1,.5,.1,1)';
+
     /* Used for WeChat Auth */
     _.ORIGIN_URL            = location.href;
 
@@ -263,16 +317,77 @@
     /* Extend */
     /* 可见 DOM 的根节点 */
     _.ID_VIEWPORT           = 'xfly_viewport';
+    /* Dialog 元素 */
+    _.ID_DIALOG             = 'xfly_dialog';
+    _.ID_DIALOG_MASK        = 'dialog_mask';
     /* FIXME(XCL): 由于布局未知原因导致动画不理想, 这里暂时不在嵌套 DOM */
     _.ID_FRAGMENT_ROOT      = 'xfly_pages';
 
     /* Layer manager */
     /* hasTopLayer */
 
+    _.DIALOG_WRAPPER        = 'dialog_wrapper';
+    /* DIALOG_STACK         = 'dialog_stack', */
+    _.DIALOG_MASK           = 'dialog_mask';
+    _.DIALOG                = 'dialog';
     _.FRAGMENT              = 'page';
     _.FRAGMENTS             = 'page_root';
 
     /* --------------------------------------------------------------------- */
+
+    var Z_IDX_FIXED     = 0,
+        Z_IDX_MIN       = 1,
+        Z_IDX_MAX       = 2,
+        Z_IDX_CURRENT   = 3;
+
+    /**
+     * 这里定义着所有 UI 的叠放次序.
+     * @type {{dialog: number[], dialog_mask: number[], dialog_wrapper:
+     *     number[]}}
+     */
+    var zIndexes = {
+        /* fixed, min, max, current */
+
+        dialog_wrapper  : [ 0, 1002, 2000, 1002 ],
+        /* dialog_stack    : [ 1, 1001, 1001, 1001 ], */
+        dialog_mask     : [ 1, 1000, 1000, 1000 ],
+        /* container */
+        dialog          : [ 1, 999,  999,  999  ],
+
+        page            : [ 0, 1,    200,  1    ],
+        /* container */
+        page_root       : [ 1, 0,    0,    0    ]
+    };
+
+    /* --------------------------------------------------------------------- */
+
+    /**
+     * 分配一个 z-index 用于 UI 的呈现。
+     *
+     * @param component
+     * @returns {*}
+     * @private
+     */
+    _.alloZIndex = function(component) {
+        if ( ! component || ! zIndexes[ component ] )
+            throw new TypeError( 'Invalid component' );
+
+        var info    = zIndexes[ component ];
+
+        var current = info[ Z_IDX_CURRENT ],    /* 当前值 */
+            next    = current;
+
+        if ( info[ Z_IDX_FIXED ] )
+            return next;
+
+        if ( current >= info[ Z_IDX_MAX ] ) {
+            next = current = info[ Z_IDX_CURRENT ] = info[ Z_IDX_MIN ];
+        } else {
+            next = info[ Z_IDX_CURRENT ] = current + 1;
+        }
+
+        return next;
+    };
 
     /**
      * 合成一个用于 Zepto 的 ID Selector。
@@ -321,38 +436,38 @@
      */
     win.case_run = function(checker, callback, context, max_check) {
         var ctx = context || window;
-    
+
         var timer_id;
         var checking_count = max_check;
-    
+
         var watcher = function() {
             if ( ! timer_id )
                 return;
-        
+
             if ( checking_count ) {
                 if ( ! ( --checking_count ) ) {
                     clearInterval( timer_id );
                     timer_id = void 0;
                 }
             }
-        
+
             if ( checker.call( ctx ) ) {
                 if ( timer_id ) {
                     clearInterval( timer_id );
                     timer_id = void 0;
                 }
-            
+
                 callback.call( ctx );
             }
         };
-    
+
         timer_id = setInterval( watcher, 1e3 );   /* 目前检测间隔为 1 秒 */
 
         watcher();
-    
+
         return timer_id;
     };
-    
+
     /* --------------------------------------------------------------------- */
 
     var _loader = doc.getElementsByTagName('head')[0];
@@ -360,8 +475,8 @@
     var _import = function(res, delay) {
         delay
             ? setTimeout( function() {
-                    _loader.appendChild( res )
-                }, delay )
+                _loader.appendChild( res )
+            }, delay )
             : _loader.appendChild( res );
     };
 
@@ -459,10 +574,10 @@
  */
 !function($x/*, undefined*/) {
     'use strict';
-    
+
     /* @type {SessionStorage} Shortcut of the sessionStorage object */
     var ss;
-    
+
     var SESSION_CURRENT_STATE               = '!#';
 
     var win                                 = $x.win;
@@ -485,7 +600,7 @@
         /* 这是一个特殊的 hash 它用于后退操作 */
         _MAGIC_BACK_HASH                    = _FRAGMENT_HASH_STRIPPER + '-',
         _SCROLL_RESTORATION_FOR_REDIRECT    = '#xsrfr';
-    
+
     /**
      * Used for history API
      * @const
@@ -524,11 +639,11 @@
 
         /* 依赖项 */
         _REQUIRES               = 'requires',
-        
+
         _SCROLLER               = 'scroller';
-        
+
     var _CFG_LAZY_MODE_ENABLED  = 'lazyModeEnabled';
-    
+
     /**
      * 一些常量。
      * @type {string}
@@ -548,7 +663,7 @@
 
     /* 是否支持多实例(Multiple instance) */
     var _MULTIPLE_INSTANCES     = 'multitask',
-    /* _IS_DERIVE_              = '_derive_', */ /* 是识是否为派生实例 */
+        /* _IS_DERIVE_              = '_derive_', */ /* 是识是否为派生实例 */
         _DERIVE_ID_             = '_derive_id_'; /* 派生后的实例 ID */
 
     /* 标识是否内容加载完成 */
@@ -579,18 +694,18 @@
      * @private
      */
     var LIFECYCLE_METHODS =
-            [
-                _CREATE,
-                    _CREATE_VIEW,
-                        _START,
-                            _ATTACH,
-                                _RESUME,
-                                _PAUSE,
-                            _DETACH,
-                        _STOP,
-                    _DESTROY_VIEW,
-                _DESTROY
-            ];
+        [
+            _CREATE,
+            _CREATE_VIEW,
+            _START,
+            _ATTACH,
+            _RESUME,
+            _PAUSE,
+            _DETACH,
+            _STOP,
+            _DESTROY_VIEW,
+            _DESTROY
+        ];
 
     /* Render 对应的 Callback */
     var _PRERENDER_HANDLER = 'onPrerender',
@@ -608,19 +723,19 @@
      */
     var SUPPORTED_HANDLERS = [
         'onCreate',
-            'onCreateView',
-                'onStart',
-                    'onAttach',
-                        'onResume',
-                        'onPause',
-                    'onDetach',
-                'onStop',
-            'onDestroyView',
+        'onCreateView',
+        'onStart',
+        'onAttach',
+        'onResume',
+        'onPause',
+        'onDetach',
+        'onStop',
+        'onDestroyView',
         'onDestroy',
-        
+
         /* Before & After Rendering */
         _PRERENDER_HANDLER, _RENDERING_HANDLER, _RENDERED_HANDLER,
-        
+
         /* Will invoke when reload occur */
         _ON_RELOAD
     ];
@@ -633,11 +748,11 @@
      */
     var METHOD_HANDLERS_MAPPING = (function (life_cycle, handlers) {
         var mapping = {};
-    
+
         life_cycle.forEach( function(lifecycle, idx) {
             mapping[ lifecycle ] = handlers[ idx ];
         } );
-        
+
         return mapping;
     })( LIFECYCLE_METHODS, SUPPORTED_HANDLERS );
 
@@ -666,6 +781,25 @@
     var _pages      = {},
         _handlers   = {};
 
+    /**
+     * 目前我们支持 4 种切换效果.
+     *
+     * @enum {string}
+     * @const
+     */
+    var fx = {
+        slide:  'slide', /* 左右滑动切换   */
+        cover:  'cover', /* 从下至上的覆盖  */
+        fade:   'fade',  /* fade-in-out  */
+        none:   'none'   /* 无切换效果     */
+    };
+
+    /**
+     * 将 fx 置为全局可见
+     * @global
+     */
+    win.fx = fx;
+
     /* ------------------------------------------------------------------------
      *                     以上为一些 fn 的引用, 及常量, 容器的定义
      * --------------------------------------------------------------------- */
@@ -677,9 +811,9 @@
      * @private
      */
     var _current;
-    
+
     var _sandbox_dom_container = {};
-    
+
     /* Unique identifier of Page */
     function _page_sequence_token(id, args) {
         return 'xfly-page__' + hash_code( _calculate_derive_key( id, args ) );
@@ -730,7 +864,7 @@
     function _get_page(id) {
         return _pages[ id ];
     }
-    
+
     /* Page 的容器 */
     function _prepare() {
         /* TODO: Progress status */
@@ -822,7 +956,7 @@
     //}
 
     /* --------------------------------------------------------------------- */
-    
+
     function _update_scroller_enabled(scrollers, enabled) {
         if ( scrollers && scrollers.length ) {
             for ( var idx in scrollers ) {
@@ -831,13 +965,13 @@
             }
         }
     }
-    
+
     /* --------------------------------------------------------------------- */
-    
+
     function _perform_reload(page) {
         /* 重置 called flag */
         page[_RENDER_CALLED_] = !! 0;
-        
+
         _invoke_handler_with_share_mode( page, _ON_RELOAD );
 
         /* 若 Page 未实现 onReload handler 则这里作默认处理 */
@@ -848,14 +982,14 @@
             } );
         }
     }
-    
+
     /* --------------------------------------------------------------------- */
-    
+
     function _exec_pending_actions(page) {
         /* FIXME(XCL): Indicator the Page have pending deferred reload... */
         if ( page[ _FLAG_POST_RELOAD ] ) {
             page[ _FLAG_POST_RELOAD ] = !! 0;
-            
+
             _perform_reload( page );
         }
     }
@@ -866,27 +1000,25 @@
 
         if ( ! page[ _FLAG_INSTANTIATED ] )
             return;
-    
-        // if ( is_sandbox_mode() ) {
 
-        if ( _current == page ) {
-            _perform_reload( page );
+        if ( is_sandbox_mode() ) {
+            if ( _current === page ) {
+                _perform_reload( page );
+            } else {
+                /* 后置 reload */
+                _set_up_post_reload( page );
+            }
         } else {
-            /* 后置 reload */
-            _set_up_post_reload( page );
-        }
+            var layout = get_layout.call( page );
 
-        // } else {
-        //     var layout = get_layout.call( page );
-        //
-        //     if ( layout.length ) {
-        //         if ( $x.isShowing( layout ) ) {
-        //             _perform_reload( page );
-        //         } else {
-        //             _set_up_post_reload( page );
-        //         }
-        //     }
-        // }
+            if ( layout.length ) {
+                if ( $x.isShowing( layout ) ) {
+                    _perform_reload( page );
+                } else {
+                    _set_up_post_reload( page );
+                }
+            }
+        }
     }
 
     /* --------------------------------------------------------------------- */
@@ -899,11 +1031,11 @@
         STARTED         = 3, /* Created and started, not resumed. */
         ATTACHED        = 4, /* The page has attached to the window. */
         RESUMED         = 5; /* Created started and resumed. */
-    
+
     function _state_to_string(state) {
         switch ( state ) {
             default:    return 'INVALID_STATE';
-                
+
             case 0:     return 'INITIALIZING';
             case 1:     return 'CREATED';
             case 2:     return 'STOPPED';
@@ -925,7 +1057,7 @@
         //    page[ _ID ],
         //    _state_to_string( page[ _STATE_ ] ),
         //    _state_to_string( new_state ) );
-        
+
         if ( ! ( typeof page[ _STATE_ ] !== 'undefined' ) )
             page[ _STATE_ ] = INVALID_STATE;
 
@@ -934,7 +1066,7 @@
         if ( page[ _STATE_ ] < new_state ) {
             if ( INVALID_STATE === page[ _STATE_ ] )
                 page[ _STATE_ ] = INITIALIZING;
-            
+
             switch ( page[ _STATE_ ] ) {
                 case INITIALIZING:
                     _invoke_handler( page, _CREATE );
@@ -962,41 +1094,39 @@
                     if ( new_state > STARTED ) {
                         /* XXX(XCL): DOM 节点, 如果为祖先级实例则该 DOM 只会被用于 clone */
                         /*(frag[ _EL_ ] = {})[ _LAYOUT_ ] = layout[ 0 ];*/
-    
-                        // if ( is_sandbox_mode() ) {
 
-                        if ( _has_page_content( page ) )
-                            restore_page_elements.call( page );
+                        if ( is_sandbox_mode() ) {
+                            if ( _has_page_content( page ) )
+                                restore_page_elements.call( page );
+                        } else {
+                            /* 用于容纳 page 内容 */
+                            var layout;
 
-                        // } else {
-                        //     /* 用于容纳 page 内容 */
-                        //     var layout;
-                        //
-                        //     if ( _has_layout_id( page ) ) {
-                        //         layout = get_layout.call( page );
-                        //     } else {
-                        //         layout = _FRAGMENT_TEMPLATE.clone();
-                        //
-                        //         /* 设置 layout id */
-                        //         _set_up_layout_id( page, layout );
-                        //
-                        //         layout.appendTo( $x._viewport );
-                        //     }
-                        //
-                        //     layout.css( 'z-index', page[ _STACK_INDEX_ ] );
-                        // }
-    
+                            if ( _has_layout_id( page ) ) {
+                                layout = get_layout.call( page );
+                            } else {
+                                layout = _FRAGMENT_TEMPLATE.clone();
+
+                                /* 设置 layout id */
+                                _set_up_layout_id( page, layout );
+
+                                layout.appendTo( $x._viewport );
+                            }
+
+                            layout.css( 'z-index', page[ _STACK_INDEX_ ] );
+                        }
+
                         _invoke_handler( page, _ATTACH );
-                        
+
                         /* ------------------------------------------------- */
-                        
+
                         _exec_pending_actions( page );
-    
+
                         /* 更新 title */
                         _trigger_update_title( page[ _TITLE ] || $Page.title );
-    
+
                         _invoke_handler( page, _RESUME );
-    
+
                         /**
                          * FIXME(XCL): 未知原因 scroller 无法滚动，这里 refresh
                          *             可暂时解决
@@ -1011,13 +1141,13 @@
                 case RESUMED:
                     if ( new_state < RESUMED ) {
                         _update_scroller_enabled( page[ _SCROLLER ], false );
-    
+
                         _invoke_handler( page, _PAUSE );
-    
+
                         /* ------------------------------------------------- */
 
                         page[ _SCROLL_POSITION_Y_ ] = _obtain_scroll_position_y();
-    
+
                         _invoke_handler( page, _DETACH );
 
                         save_page_elements.call( page,
@@ -1035,13 +1165,13 @@
                         _invoke_handler( page, _DESTROY );
             }
         }
-        
+
         /* Store the new state */
         page[ _STATE_ ] = new_state;
     }
 
     function trigger_events() {}
-    
+
     /**
      * 调用 page 指定的 handler。
      *
@@ -1053,25 +1183,25 @@
         var ordered_handlers    = $.isArray( fn ) ? fn : [ fn ];
         var registered_handlers = _get_handlers( page ),
             handler_name;
-                
+
         if ( ! registered_handlers )
             return;
-        
+
         for ( var idx in ordered_handlers ) {
             handler_name = METHOD_HANDLERS_MAPPING[ ordered_handlers[ idx ] ];
-    
+
             // handler_name in registered_handlers
             registered_handlers[ handler_name ]
-                && registered_handlers[ handler_name ]
-                    .apply( page, 3 in arguments ? arguments.slice( 2 ) : [] );
+            && registered_handlers[ handler_name ]
+                .apply( page, 3 in arguments ? arguments.slice( 2 ) : [] );
         }
     }
-    
+
     /* 设置一个后置 reload Task. */
     function _set_up_post_reload(page) {
         page[ _FLAG_POST_RELOAD ] = !! 1;
     }
-    
+
     /**
      * 调用指定的 handler 以多实例模式。
      *
@@ -1085,10 +1215,10 @@
         var registered_handlers = _get_handlers( page );
 
         registered_handlers
-            && registered_handlers[ handler_name ]
-            // && handler_name in registered_handlers
-            && registered_handlers[ handler_name ]
-                .apply( page, 3 in arguments ? arguments.slice( 2 ) : [] );
+        && registered_handlers[ handler_name ]
+        // && handler_name in registered_handlers
+        && registered_handlers[ handler_name ]
+            .apply( page, 3 in arguments ? arguments.slice( 2 ) : [] );
     }
 
     /**
@@ -1123,7 +1253,7 @@
     function pre_render() {
         _invoke_render_handler( this, _PRERENDER_HANDLER );
     }
-    
+
     /**
      * Render 操作已交付至浏览器.
      * @private
@@ -1141,7 +1271,7 @@
 
         if ( scroll_dom.length ) {
             var scrolls = [];
-            
+
             var options = {
                 probeType:      3,
                 mouseWheel:     true,
@@ -1156,21 +1286,21 @@
                 preventDefault: xfly.os.ios || false,*/
                 keyBindings:    true
             };
-            
+
             scroll_dom
                 .each( function ( idx, dom ) {
                     var self = $( this );
                     var wrapper = self.parent( '.page-scroll-wrapper' );
-                    
+
                     if ( ! wrapper.length ) {
                         wrapper = self
                             .wrap( '<div class="page-scroll-wrapper"></div>' )
                             .parent( '.page-scroll-wrapper' );
                     }
-                    
+
                     scrolls.push( new IScroll( wrapper[ 0 ], options ) );
-            } );
-    
+                } );
+
             page[ _SCROLLER ] = scrolls;
         }
     }
@@ -1180,10 +1310,10 @@
         var handlers = _get_handlers( page );
 
         handlers
-            //&& handler in handlers
-            && handlers[ handler ]
-                && handlers[ handler ]
-                    .call( page, get_layout.call( page ) );
+        //&& handler in handlers
+        && handlers[ handler ]
+        && handlers[ handler ]
+            .call( page, get_layout.call( page ) );
     }
 
     /**
@@ -1194,7 +1324,7 @@
     function get_container() {
         return get_layout.call( this )[ 0 ];
     }
-    
+
     /**
      * 是否有 Content(Inner view).
      *
@@ -1203,18 +1333,16 @@
      * @private
      */
     function _has_page_content(page) {
-        // if ( is_sandbox_mode() ) {
+        if ( is_sandbox_mode() ) {
+            var layout_id = get_layout_id.call( page );
 
-        var layout_id = get_layout_id.call( page );
+            /* NOTE(XCL): 值为 undefined 时, 标识 page 的内容已通过网络加载完成. */
+            return layout_id && typeof _sandbox_dom_container[ layout_id ] !== 'undefined';
+        } else {
+            var layout = get_layout.call( page );
 
-        /* NOTE(XCL): 值为 undefined 时, 标识 page 的内容已通过网络加载完成. */
-        return layout_id && typeof _sandbox_dom_container[ layout_id ] !== 'undefined';
-
-        // } else {
-        //     var layout = get_layout.call( page );
-        //
-        //     return layout.length && layout[ 0 ].parentNode && '' !== layout.html();
-        // }
+            return layout.length && layout[ 0 ].parentNode && '' !== layout.html();
+        }
     }
 
     /**
@@ -1227,7 +1355,7 @@
     function get_layout() {
         return $( '#x_f' + this[ _EL_ ][ _LAYOUT_ID_ ] );
     }
-    
+
     /**
      * 获取 layout id。
      *
@@ -1238,10 +1366,10 @@
             && this[ _EL_ ][ _LAYOUT_ID_ ]
             && String( this[ _EL_ ][ _LAYOUT_ID_ ] );
     }
-    
+
     /* TODO(XCL): Just dumping some state or data Of the page(s)... */
     /*win.dump = function () { console.dir( _sandbox_dom_container ); };*/
-    
+
     /**
      * 为 page 设置唯一的 DOM ID。
      *
@@ -1251,26 +1379,26 @@
      */
     function _set_up_layout_id(page, layout) {
         var id = page[ _ID ];
-        
+
         var instance_id;    /* 单实例即指 id 本身 */
         var layout_id;
-        
+
         instance_id = _is_support_multi_instance( id )
             ? _calculate_derive_key( id, page[ _ROUTE_ARGS ] )
             : id;
-        
+
         layout_id = hash_code( instance_id );
-        
+
         /* 为 DOM 设置 id */
-        // if ( ! is_sandbox_mode() )
-        //     layout.attr( 'id', 'x_f' + layout_id );
-        
+        if ( ! is_sandbox_mode() )
+            layout.attr( 'id', 'x_f' + layout_id );
+
         page[ _EL_ ][ _LAYOUT_ID_ ] = layout_id;
-        
+
         /* XXX(XCL):添加一个元素, 仅标识 page 内容已经加载完成 */
         _sandbox_dom_container[ layout_id ] = void 0;
     }
-    
+
     function _has_layout_id(page) {
         return page[ _EL_ ] && page[ _EL_ ][ _LAYOUT_ID_ ];
     }
@@ -1284,17 +1412,15 @@
         if ( ! can_back() )
             return !! 0;
 
-        // if ( is_sandbox_mode() ) {
+        if ( is_sandbox_mode() ) {
+            var back_before = _current;
 
-        var back_before = _current;
-
-        back();
-        _schedule_destroy( back_before );
-
-        // } else {
-        //     _schedule_destroy( _current );
-        //     back();
-        // }
+            back();
+            _schedule_destroy( back_before );
+        } else {
+            _schedule_destroy( _current );
+            back();
+        }
 
         return !! 1;
     }
@@ -1445,33 +1571,31 @@
     function _render_with_html(data) {
         /* 通知更新 Content loaded 标识 */
         _notify_content_was_loaded( this );
-    
+
         /* TODO(XCL): 如果 DOM 没有附载到 Document 则需要添加至其中... */
-        // if ( is_sandbox_mode() ) {
+        if ( is_sandbox_mode() ) {
+            /*var is_first_page = $.isEmptyObject( _sandbox_dom_container );*/
 
-        ////var is_first_page = $.isEmptyObject( _sandbox_dom_container );
+            _set_up_layout_id( this );
 
-        _set_up_layout_id( this );
+            /*if ( ! is_first_page ) {*/
+            /* 是否为当前 Page, 是当前则更新，反则放置于 Sandbox 容器 */
+            if ( _current == void 0                 /* First booting */
+                || INITIALIZING == this[ _STATE_ ]  /* Rendering with static html OR onCreateView */
+                || _current == this ) {             /* Reloading */
+                /* 对于 reload 模式，需将现有 View 移除 */
+                if ( data[ 'reload' ] )
+                    $x._viewport.children( '.page-ui' ).remove();
 
-        /*if ( ! is_first_page ) {*/
-        /* 是否为当前 Page, 是当前则更新，反则放置于 Sandbox 容器 */
-        if ( _current == void 0                 /* First booting */
-            || INITIALIZING == this[ _STATE_ ]  /* Rendering with static html OR onCreateView */
-            || _current == this ) {             /* Reloading */
-            /* 对于 reload 模式，需将现有 View 移除 */
-            if ( data[ 'reload' ] )
-                $x._viewport.children( '.page-ui' ).remove();
-
-            $x._viewport.append( data[ _HTML ] );
+                $x._viewport.append( data[ _HTML ] );
+            } else {
+                /* NOTE(XCL): 这里放置的为 Raw HTML。 */
+                _sandbox_dom_container[ get_layout_id.call( this ) ] = data[ _HTML ];
+            }
+            /*}*/
         } else {
-            /* NOTE(XCL): 这里放置的为 Raw HTML。 */
-            _sandbox_dom_container[ get_layout_id.call( this ) ] = data[ _HTML ];
+            get_layout.call( this ).html( data[ _HTML ] );
         }
-        ////}
-
-        // } else {
-        //     get_layout.call( this ).html( data[ _HTML ] );
-        // }
     }
 
     /**
@@ -1485,10 +1609,10 @@
 
         $x.get( data[ _URL ], function(response) {
             var reload_flag = data[ 'reload' ] || 0;
-            
+
             /* 填充 HTML 片段 */
             (data = {})[ _HTML ] = response;
-            
+
             data.reload = reload_flag;
 
             _invoke_render( target, data );
@@ -1566,7 +1690,7 @@
 
             return;
         }
-        
+
         /* id, args, ?, ? */
         if ( $.isPlainObject( args ) ) {
             _override_args( id, args );
@@ -1682,7 +1806,7 @@
             /*&& _DERIVE_ID_ in page*/
             && page[ _DERIVE_ID_ ];
     }
-    
+
     /**
      * { key: 'value' } => key=value
      *
@@ -1733,7 +1857,7 @@
     function _end_trans() {
         /* FIXME(XCL): 这里绝对解释无论是否已处于锁态 */
         _in_transaction_ = !! 0;
-    
+
         _settle_delayed_page_if_necessary();
 
         _on_trans_ended();
@@ -1796,31 +1920,31 @@
         return _TRANSITION_UNSET === transition;
     }
 
-    // function _build_transition(fx, forward) {
-    //     /* enter, popExit, popEnter, exit */
-    //     if ( ! $x.isString( fx ) )
-    //         return _TRANSITION_NONE;
-    //
-    //     var scheme = _transits[ _resolve_fx( fx ) ];
-    //
-    //     /**
-    //      *              front        rear
-    //      * ---------------------------------
-    //      * forward:     enter    <-> popExit
-    //      * backward:    popEnter <-> exit
-    //      */
-    //     var checkRear  = forward ? 'popExit' : 'exit',
-    //         checkFront = forward ? 'enter'   : 'popEnter';
-    //
-    //     var rear  = scheme[checkRear ] && _build_animation_name( fx, forward, 1 );
-    //     var front = scheme[checkFront] && _build_animation_name( fx, forward, 0 );
-    //
-    //     return {
-    //         rear:   rear,
-    //         front:  front,
-    //         ease:   scheme['ease'] || $x.cubic_bezier
-    //     };
-    // }
+    function _build_transition(fx, forward) {
+        /* enter, popExit, popEnter, exit */
+        if ( ! $x.isString( fx ) )
+            return _TRANSITION_NONE;
+
+        var scheme = _transits[ _resolve_fx( fx ) ];
+
+        /**
+         *              front        rear
+         * ---------------------------------
+         * forward:     enter    <-> popExit
+         * backward:    popEnter <-> exit
+         */
+        var checkRear  = forward ? 'popExit' : 'exit',
+            checkFront = forward ? 'enter'   : 'popEnter';
+
+        var rear  = scheme[checkRear ] && _build_animation_name( fx, forward, 1 );
+        var front = scheme[checkFront] && _build_animation_name( fx, forward, 0 );
+
+        return {
+            rear:   rear,
+            front:  front,
+            ease:   scheme['ease'] || $x.cubic_bezier
+        };
+    }
 
     function _check() {}
 
@@ -1888,14 +2012,14 @@
 
                 /* 将通配符转换为表达式(Wildcards => Expression) */
                 ( -1 ^ pattern.indexOf('**') )
-                    && ( pattern = pattern.replace('**', '(w|d|.)') );
+                && ( pattern = pattern.replace('**', '(w|d|.)') );
 
                 _path_patterns.push( [
                     new RegExp( '^' + pattern + '+' ),
                     paths[ key ]
                 ] );
             } );
-            
+
             _global_lazy_page_version_code = _config[ 'lazyPageVerCode' ];
         }
     }
@@ -1962,16 +2086,16 @@
         var current         = _current,         /* 当前 page, 也旨即将隐藏的 */
             is_first_page   = ! _has_page(),    /* 是否有默认 view(Stack-based) */
             next            = this;             /* 要前往的 page */
-    
+
         var transit,
-            postpone_commit_trans = 0;          /* 标识是否为后置结束事务 */
-            
+            postpone_commit_trans = 0;            /* 标识是否为后置结束事务 */
+
         /* ------------------------------------------------------------------ */
 
         /* 是否在操作本身 */
-        if ( current && next == current )
+        if ( current && next === current )
             return;
-    
+
         /* 标识即将呈现的 Page 实例已初始化 */
         _mark_was_instantiated( next );
 
@@ -1990,26 +2114,26 @@
          * 3: 默认的(slide);
          */
         if ( is_first_page ) {
-            // transit = _build_transition( _TRANSIT_NONE );
+            transit = _build_transition( _TRANSIT_NONE );
 
             /* 不启用动画, hidden 后也就无需 endTrans */
             postpone_commit_trans = 0;
         } else {
-            // if ( animation ) {
-            //     animation = _resolve_fx( animation );
-            //     /* XXX(XCL): Remember the animation of overridden */
-            //     /*next[ _OVERRIDDEN_ANIMATION ] = animation;*/
-            // } else {
-            //     animation = _get_animation( next );
-            // }
-            //
-            // transit = _build_transition( animation,
-            //                             reverse
-            //                                 ? _BACKWARD
-            //                                 : _FORWARD
-            //                             );
-            
-            // postpone_commit_trans = !! transit.rear;
+            if ( animation ) {
+                animation = _resolve_fx( animation );
+                /* XXX(XCL): Remember the animation of overridden */
+                /*next[ _OVERRIDDEN_ANIMATION ] = animation;*/
+            } else {
+                animation = _get_animation( next );
+            }
+
+            transit = _build_transition( animation,
+                reverse
+                    ? _BACKWARD
+                    : _FORWARD
+            );
+
+            postpone_commit_trans = !! transit.rear;
         }
 
         /* 是否启用动画(首个 page 不应该被加载动画) */
@@ -2022,33 +2146,31 @@
          * show -> front
          * 应用 animation 时亦是如此
          */
-        // is_sandbox_mode() || _cas_stack_if_necessary(
-        //     reverse ? next    : current,
-        //     reverse ? current : next
-        // );
-    
+        is_sandbox_mode() || _cas_stack_if_necessary(
+            reverse ? next    : current,
+            reverse ? current : next
+        );
+
         /* onVisibilityChanged */
 
-        // if ( is_sandbox_mode() ) {
+        if ( is_sandbox_mode() ) {
+            /* 隐藏当前 page */
+            if ( current )
+                _move_to_state( current, STARTED );
+        } else {
+            _move_to_state( next, RESUMED );
 
-        /* 隐藏当前 page */
-        if ( current )
-            _move_to_state( current, STARTED );
+            /* 隐藏当前 page */
+            if ( current ) {
+                _move_to_state( current, STARTED );
 
-        // } else {
-        //     _move_to_state( next, RESUMED );
-        //
-        //     /* 隐藏当前 page */
-        //     if ( current ) {
-        //         _move_to_state( current, STARTED );
-        //
-        //         _hide(
-        //             current /*, _FROM_STACK_YES, end_trans_needed */,
-        //             transit,
-        //             fire_after_page_change_event
-        //         );
-        //     }
-        // }
+                _hide(
+                    current /*, _FROM_STACK_YES, end_trans_needed */,
+                    transit,
+                    fire_after_page_change_event
+                );
+            }
+        }
 
         /* FIXME(XCL): 不管是否被暂停这里绝对执行恢复操作 */
         _move_to_state( next, RESUMED );
@@ -2066,9 +2188,9 @@
              *   ss.setItem( SESSION_CURRENT_STATE, JSON.stringify( state ) );
              * }
              */
-            
+
             _add_to_back_stack( current, animation );
-            
+
             /* TODO(XCL): 混合模式处理 */
             /* history_api_supported && _setup_current_state( next, fromUri ); */
         } else {
@@ -2076,7 +2198,7 @@
         }
 
         _current = next;
-        
+
         /* 更新 location */
         _update_location( _FORWARD, _current );
 
@@ -2084,16 +2206,14 @@
          * 如果 trans 为后置提交, 那么这里将不在处理, 注意 Rear 与 Front 效果呈现时序
          * 有可能不一致.
          */
-        // if ( is_sandbox_mode() /*|| ! postpone_commit_trans*/ ) {
+        if ( is_sandbox_mode() || ! postpone_commit_trans ) {
+            /* 标识 trans 完成 */
+            _end_trans();
 
-        /* 标识 trans 完成 */
-        _end_trans();
+            /* 触发 onAfterPageChange 事件 */
+            fire_after_page_change_event();
+        }
 
-        /* 触发 onAfterPageChange 事件 */
-        fire_after_page_change_event();
-
-        // }
-        
         /*postCommitTrans || _endTrans();*/
     }
 
@@ -2107,12 +2227,12 @@
         else
             _push_state( state, title, hash );
 
-         _current_state = state;
+        _current_state = state;
     }
 
     function _setup_initial_state(/* page */initial, from_uri) {
         var state               = {};
-            state[ _BSR_IDX ]   = _FIRST_STATE;
+        state[ _BSR_IDX ]   = _FIRST_STATE;
 
         /**
          * Chrome 45 (Version 45.0.2454.85 m) started throwing an error,
@@ -2170,7 +2290,7 @@
 
         /* Back stack record */
         var bsr     = _pop_back_stack();
-            next    = _get_page( bsr[ _BACK_STACK_TARGET_ID ] );
+        next    = _get_page( bsr[ _BACK_STACK_TARGET_ID ] );
 
         /* Dispatching the page change before event */
         _on_before_page_change( current, next );
@@ -2179,23 +2299,30 @@
             _on_after_page_change( current, next );
         };
 
-        var transit;
-        // var transit                 = _build_transition( animation, _BACKWARD ),
+        /**
+         * 切换效果
+         * rear: page-exit, front: page-pop-enter
+         */
+        animation = _OVERRIDDEN_ANIMATION in bsr
+            ? bsr[ _OVERRIDDEN_ANIMATION ]
+            : _get_animation( current );
+
+        var transit                 = _build_transition( animation, _BACKWARD ),
             /* 标识是否为后置结束事务 */
-            // postpone_commit_trans   = !! transit.rear;
+            postpone_commit_trans   = !! transit.rear;
 
         _begin_trans();
 
         /* FIXME(XCL): 后退操作这里的 stack 是个例外, 即将呈现的不能置于量上层 */
-        // is_sandbox_mode() || _cas_stack_if_necessary( next, current );
+        is_sandbox_mode() || _cas_stack_if_necessary( next, current );
 
         /* Step 1: 暂停当前的 page */
         _move_to_state( current, STARTED );
-    
+
         /* 隐藏当前 page */
-        // is_sandbox_mode() || _hide( current, transit
-        //     /* _FROM_STACK_NO, */ /* endTransNeeded */ /* 1 */,
-        //     fire_page_change_after_event );
+        is_sandbox_mode() || _hide( current, transit
+            /* _FROM_STACK_NO, */ /* endTransNeeded */ /* 1 */,
+            fire_page_change_after_event );
 
         /* Step 2: 恢复 get back 的目标 */
         _move_to_state( next, RESUMED );
@@ -2208,20 +2335,18 @@
         /* Step 3: 支持 history 则不需要手动更新 hash */
         _update_location( _BACKWARD, _current );
 
-        // if ( is_sandbox_mode /*|| ! postpone_commit_trans*/ ) {
+        if ( is_sandbox_mode || ! postpone_commit_trans ) {
+            _end_trans();
 
-        _end_trans();
+            fire_page_change_after_event();
+        }
 
-        fire_page_change_after_event();
-
-        // }
-        
         /*postponeCommitTrans*/ /*ALWAYS_POST_COMMIT_ON_BACK*/ /*|| _endTrans();*/
 
         /* TODO(XCL): 对于非 multitask 的后退操作, 如果在后退之前 args 被更新则需要同步 hash */
         if ( ! _is_derive( _current ) ) {
             var currentlyArgs = _extract_args( location.href );
-            
+
             if ( ! _is_same_args( _current[ _ROUTE_ARGS ], currentlyArgs ) ) {
                 _apply_new_args( _current );
             }
@@ -2246,27 +2371,25 @@
         var target  = _get_page( id );
 
         /* TODO: 不允许移除顶级 page */
-        if ( current == target ) {
+        if ( current === target ) {
         }
-    
+
         _invoke_handler( target, [ _STOP, _DESTROY_VIEW, _DESTROY, _DETACH ] );
-        
-        //if ( is_sandbox_mode() ) {
 
-        var layout_id = get_layout_id.call( target );
+        if ( is_sandbox_mode() ) {
+            var layout_id = get_layout_id.call( target );
 
-        _sandbox_dom_container[ layout_id ] = void 0;
-        /* FIXME(XCL): 这里 delete 掉可能会导致 Page 加载两次(reload 被调用的前提下) */
-        delete _sandbox_dom_container[ layout_id ];
-
-        //} else {
+            _sandbox_dom_container[ layout_id ] = void 0;
+            /* FIXME(XCL): 这里 delete 掉可能会导致 Page 加载两次(reload 被调用的前提下) */
+            delete _sandbox_dom_container[ layout_id ];
+        } else {
             /* DOM 移除 */
-            //get_layout.call( target ).remove();
-        //}
+            get_layout.call( target ).remove();
+        }
 
         target[ _EL_ ]              = {};
         target[ _RENDER_CALLED_ ]   = !! 0;
-        
+
         /*delete _pages[ id ]*/
     }
 
@@ -2278,11 +2401,11 @@
         var id = who[ _ID ];
 
         var trigger = 0;
-        
-        // if ( ! is_sandbox_mode() ) {
-        //     trigger = $.fx.speeds.slow * ( $.fx.off ? .2 : 1.2 )
-        //                 /*$.fx.speeds.slow * 10 + 25*/;
-        // }
+
+        if ( ! is_sandbox_mode() ) {
+            trigger = $.fx.speeds.slow * ( $.fx.off ? .2 : 1.2 )
+            /*$.fx.speeds.slow * 10 + 25*/;
+        }
 
         /* 记录 task 以备意外清空下取消 */
         who['destroy_task_id'] = setTimeout( function() {
@@ -2297,6 +2420,27 @@
     /* 标识是否有切换效果 */
     var _TRANSIT_YES    = !! 1;
     var _TRANSIT_NONE   = ! _TRANSIT_YES;
+
+    function _make_animation_scheme(/* enter, popExit, popEnter, exit, ease */) {
+        var ret;
+
+        if ( 1 === arguments.length )
+            return arguments[ 0 ];
+
+        ret = {
+            /* forward */
+            enter:      arguments[ 0 ],
+            popExit:    arguments[ 1 ],
+
+            /* backward */
+            popEnter:   arguments[ 2 ],
+            exit:       arguments[ 3 ]
+        };
+
+        arguments[4] && (ret['ease'] = arguments[4]);
+
+        return ret;
+    }
 
     /**
      * 指定切换动作对应的4个环节是否需要
@@ -2329,13 +2473,13 @@
         /* Show the dom */
         layout.show();
 
-        // transit.front
-        //     &&
-        //     layout.animate(
-        //         transit.front,
-        //         $.fx.speeds.slow,
-        //         transit.ease/*$x.cubic_bezier*//*'linear'*/
-        //     );
+        transit.front
+        &&
+        layout.animate(
+            transit.front,
+            $.fx.speeds.slow,
+            transit.ease/*$x.cubic_bezier*//*'linear'*/
+        );
 
         /* 提取并执行触发器定义的操作 */
         _fire_trigger_if_necessary.call( target, 'show' );
@@ -2344,7 +2488,7 @@
     function _fire_trigger_if_necessary(state) {
         /* 待触发的 trigger 队列 */
         var triggers = _extract_triggers( this[ _ID ], state );
-        
+
         /* 没有与之关联的 trigger */
         if ( ! triggers )
             return;
@@ -2371,27 +2515,27 @@
      * @private
      */
     function _hide(target, transit, firer) {
-        // var layout = get_layout.call( target );
-        //
-        // if ( transit.rear ) {
-        //     /* properties, duration, ease, callback, delay */
-        //     layout.animate(
-        //         transit.rear,
-        //         $.fx.speeds.slow,
-        //         transit.ease/*$x.cubic_bezier*//*'linear'*/,
-        //         function () {
-        //             if ( ! is_sandbox_mode() )
-        //                 layout.hide();
-        //
-        //             _end_trans();
-        //
-        //             firer && firer();
-        //         }
-        //     );
-        // } else {
-        //     if ( ! is_sandbox_mode() )
-        //         layout.hide();
-        // }
+        var layout = get_layout.call( target );
+
+        if ( transit.rear ) {
+            /* properties, duration, ease, callback, delay */
+            layout.animate(
+                transit.rear,
+                $.fx.speeds.slow,
+                transit.ease/*$x.cubic_bezier*//*'linear'*/,
+                function () {
+                    if ( ! is_sandbox_mode() )
+                        layout.hide();
+
+                    _end_trans();
+
+                    firer && firer();
+                }
+            );
+        } else {
+            if ( ! is_sandbox_mode() )
+                layout.hide();
+        }
     }
 
     /* --------------------------------------------------------------------- */
@@ -2410,13 +2554,13 @@
         /**
          * var top    = _back_stack.length && _back_stack[ _back_stack - 1 ];
          * var at_top = top && top[ _STACK_INDEX_ ] == page[ _ID ];
-        
+
          * if ( at_top ) {
          *   if ( ! _is_support_multi_instance( page[ _ID ] ) )
          *       return null;
          * }
          */
-    
+
         return _push( page, animation );
     }
 
@@ -2424,11 +2568,11 @@
         state[ _SCROLL_POSITION_Y_ ] = _obtain_scroll_position_y();
 
         _persistent_state( state, title, url_or_hash );
-    
+
         /* TODO(XCL): Session Or Local Storage */
         history.pushState( state, title, url_or_hash );
     }
-    
+
     function _persistent_state_for_redirect(url) {
         _push_state( _new_state(), '', url )
     }
@@ -2446,7 +2590,7 @@
     function _persistent_state(state, title, url_or_hash) {
         if ( session_storage_supported ) {
             var stack_idx_for_persistent = persistent_session_stack_idx_offset++;
-    
+
             ss.setItem( '#' + stack_idx_for_persistent,
                 encodeURI( url_or_hash ) +      /* URL */
                 _PERSISTENT_STATE_SEPARATOR +
@@ -2454,11 +2598,11 @@
             );
 
             ss.setItem( SESSION_CURRENT_STATE, stack_idx_for_persistent );
-    
+
             _scheduling_for_remove_eldest_state();
         }
     }
-    
+
     /**
      * 最大保持的有效可后退的 History 记录。
      *
@@ -2466,9 +2610,9 @@
      * @const
      */
     var MAX_STATE_HISTORY_KEEP = 100;
-    
+
     var check_state_timer;
-    
+
     /**
      * 移除陈旧的 History 记录。
      *
@@ -2478,37 +2622,37 @@
         if ( check_state_timer ) {
             check_state_timer = clearTimeout( check_state_timer );
         }
-        
+
         check_state_timer = setTimeout( function () {
             check_state_timer = void 0;
-            
+
             if ( ss.length / 2 > MAX_STATE_HISTORY_KEEP ) {
                 var current_state_idx   = parseInt( ss.getItem( SESSION_CURRENT_STATE ) );
                 var records             = [];
-                
+
                 for ( var key in ss ) {
                     if ( 0 === key.indexOf( '#') ) {
                         records.push( parseInt( key.substr( 1 ) ) );
                     }
                 }
-                
+
                 records.sort( function ( a, b ) {
                     return b - a;
                 } );
-                
+
                 var start_offset;
                 for ( var idx = 0; idx < records.length; idx++ ) {
                     if ( current_state_idx === records[ idx ] ) {
                         start_offset = idx + MAX_STATE_HISTORY_KEEP;
-    
+
                         if ( records.length <= start_offset ) {
                             return;
                         }
-                        
+
                         break;
                     }
                 }
-                
+
                 for ( var idx = start_offset; idx < records.length; idx++ ) {
                     ss.removeItem( '#' + records[ idx ] );
                 }
@@ -2529,6 +2673,27 @@
             /* 更新至 location.hash(此后 hash 将被变更) */
             _apply_hash( page );
         }
+    }
+
+    function _cas_stack_if_necessary(/* zepto */r, /* zepto */f) {
+        if ( ! r )
+            return;
+
+        var back  = r[ _STACK_INDEX_ ],
+            front = f[ _STACK_INDEX_ ];
+
+        if ( front > back )
+            return;
+
+        front = front ^ back;
+        back  = back ^ front;
+        front = front ^ back;
+
+        r[ _STACK_INDEX_ ] = back;
+        f[ _STACK_INDEX_ ] = front;
+
+        get_layout.call( r ).css( 'z-index', back );
+        get_layout.call( f ).css( 'z-index', front );
     }
 
     /**
@@ -2618,7 +2783,7 @@
         /* ----------------------------------------------------------------- */
 
         /* 对一个 page 开放的实例方法 */
-        /*_bind_methods( derive );*/
+        /*_bindMethods( derive );*/
 
         /* 派生的标识(用到标识唯一) */
         Object.defineProperty(
@@ -2628,14 +2793,14 @@
         );
 
         /* 赋于新的 stack index, 实际上就是 z-index */
-        // derive[ _STACK_INDEX_ ] = $x.alloZIndex( $x.FRAGMENT );
+        derive[ _STACK_INDEX_ ] = $x.alloZIndex( $x.FRAGMENT );
         /* XXX: DOM 节点, 如果为祖先级实例则该 DOM 只会被用于 clone */
         derive[ _EL_ ] = {};
         /*(derive[ _EL_ ] = {})[ _LAYOUT_ ] = _FRAGMENT_TEMPLATE.clone()[ 0 ];*/
 
         /* To retain the arguments if present. */
         derive[ _ROUTE_ARGS ] = args;
-    
+
         /**
          * 填充 HTML 片段，如果已指定该字段
          * if ( _HTML in derive ) {
@@ -2699,7 +2864,7 @@
         /* Attributes 容器 */
         this.attributes = {};
     };
-    
+
     /* 为 page 实例开放的方法 */
     (function (/* Page.prototype */_) {
         /**
@@ -2717,7 +2882,7 @@
                 throw new Error( "You haven't call the show method with this page!" );
 
             var is_first_page = $.isEmptyObject( _sandbox_dom_container );
-            
+
             /* To indicate the render is called */
             this[ _RENDER_CALLED_ ] = !! 1;
 
@@ -2734,7 +2899,7 @@
 
             /* After rendered */
             immediate && rendered.call( this, data );
-            
+
             return this;
         };
 
@@ -2746,7 +2911,7 @@
          */
         _.setTitle = function (title) {
             set_title( title );
-            
+
             return this;
         };
 
@@ -2757,11 +2922,11 @@
          */
         _.isVisible = function () {
             var layout = get_layout();
-            
+
             return layout.length
                 && $x.isShowing( layout );
         };
-    
+
         /**
          * 设置 Args。
          *
@@ -2771,13 +2936,13 @@
         _.setArgs = function(args) {
             if ( $.isPlainObject( args ) ) {
                 var merging = this.getArgs() || {} ;
-                
+
                 Object.keys( args ).forEach( function (key) {
                     merging[ key ] = args[ key ];
                 } );
-                
+
                 _override_args( _get_id( this ), merging );
-    
+
                 if ( _current == this && history_api_supported ) {
                     history.replaceState(
                         history.state || _new_state(),     /* state */
@@ -2786,7 +2951,7 @@
                     );
                 }
             }
-         
+
             return this;
         };
 
@@ -2805,7 +2970,7 @@
          * @returns {HtmlElement}
          */
         _.getContainer = get_container;
-    
+
         /**
          * 获取 page 的 Scroller 实例数组。
          *
@@ -2823,7 +2988,7 @@
         _.hasContent = function () {
             return this[ _FLAG_CONTENT_LOADED ];
         };
-    
+
         /**
          * 请求进行 Reload 操作。
          *
@@ -2832,10 +2997,10 @@
         _.reload = function (args) {
             _reload( this[ _ID ], args );
         };
-    
+
         // TODO(XCL):
         _.runWithGlobalEach = $x.throwNiyError;
-    
+
         /**
          * 执行 DOM find 操作于全局已加载的 Page。
          *
@@ -2848,10 +3013,10 @@
 
             var z;
             var collection_of_page;
-            
+
             Object.keys( _sandbox_dom_container ).forEach( function (key) {
                 z = _sandbox_dom_container[ key ];
-                
+
                 if ( z ) {
                     collection_of_page = z.find( selector );
 
@@ -2860,10 +3025,10 @@
                             collection_of_page );
                 }
             } );
-            
+
             return result_collection.length
-                        ? $( result_collection )
-                        : result_collection;
+                ? $( result_collection )
+                : result_collection;
         };
 
         /**
@@ -2876,7 +3041,7 @@
         _.put = function(key, value) {
             if ( null != key )
                 this.attributes[key] = value;
-            
+
             return this;
         };
 
@@ -2919,7 +3084,7 @@
          */
         _.clear = function() {
             this.attributes = {};
-            
+
             return this;
         };
     })(Page.prototype);
@@ -2940,37 +3105,37 @@
             fromUri:    from_uri,
             animation:  animation
         };
-        
+
         _load_module( id );
     }
-    
+
     function _setup_pending_boot_page( id, callback ) {
         _load_module( id, callback );
     }
-    
+
     function _load_module( id, callback ) {
         /* 查找路径前缀 */
         var base_paths      = _find_base_path_if_needed( id );
-    
+
         var js_path         = '';
         var css_path;
-    
+
         /*  FIXME(XCL): 对于 Page 代码可能需要 Version code */
         var cache_control   = '';
-    
+
         if ( base_paths ) {
             if ( ! $.isArray( base_paths ) )
                 base_paths = [ base_paths ];
-        
+
             if ( base_paths.length > 0 )
                 js_path = base_paths[ 0 ];
             if ( base_paths.length > 1 )
                 css_path = base_paths[ 1 ];
-        
+
             _global_lazy_page_version_code
-                && ( cache_control = '?_=' + _global_lazy_page_version_code );
+            && ( cache_control = '?_=' + _global_lazy_page_version_code );
         }
-    
+
         /* Loading the style first, then script */
         css_path && load_asset( css_path + id + '.css' + cache_control );
         load_asset( js_path + id + '.js' + cache_control, callback );
@@ -2996,7 +3161,7 @@
     function _should_lazy_load(id) {
         return '' !== _find_base_path_if_needed( id );
     }
-    
+
     function _postpone_page_for_trans_end( id, args, from_uri, animation ) {
         _pending_page_info = {
             id:         id,
@@ -3005,10 +3170,10 @@
             animation:  animation
         }
     }
-    
+
     function _settle_delayed_page_if_necessary() {
         _pending_page_info
-            && _settle_pending_page_if_necessary( _pending_page_info.id );
+        && _settle_pending_page_if_necessary( _pending_page_info.id );
     }
 
     function _settle_pending_page_if_necessary(id) {
@@ -3016,7 +3181,7 @@
             return;
 
         var immediate = _pending_page_info;
-        
+
         /* 标记已处理 */
         _pending_page_info = void 0;
 
@@ -3053,7 +3218,7 @@
         var page = _exist( id )
             ? _get_page( id )
             : new Page();
-        
+
         /* TODO(XCL): 已经存在的是否允许更新 */
         if ( ! _is_new( page ) )
             return page;
@@ -3064,7 +3229,7 @@
             && !! props[ _MULTIPLE_INSTANCES ];
 
         /* 分配一个 idx 实际上就是 z-index */
-        var /*stackIdx = $x.alloZIndex( $x.FRAGMENT ),*/
+        var stackIdx = $x.alloZIndex( $x.FRAGMENT ),
             requires;
 
         /**
@@ -3075,8 +3240,8 @@
 
         /* 处理依赖项 */
         $.isPlainObject( props )
-            && props[ _REQUIRES ]
-                && ( requires = _resolve_requires( props.requires ) );
+        && props[ _REQUIRES ]
+        && ( requires = _resolve_requires( props.requires ) );
 
         /* ----------------------------------------------------------------- */
 
@@ -3093,29 +3258,29 @@
         /* Page 的 id */
         page[ _ID ]             = id;
         /* 叠放次序 */
-        //page[ _STACK_INDEX_ ]   = stackIdx;
+        page[ _STACK_INDEX_ ]   = stackIdx;
 
         /* XXX(XCL): DOM 节点, 如果为祖先级实例则该 DOM 只会被用于 clone */
         page[ _EL_ ] = {};
 
         /* 标题 */
         $x.isString( props[ _TITLE ] )
-            && (page[ _TITLE ] = props[ _TITLE ]);
+        && (page[ _TITLE ] = props[ _TITLE ]);
 
         /* 解析后的 hash, xfly.ui.home -> xfly/ui/home */
         page[ _ROUTE ] = _make_id_as_xpath_route( id );
 
         /* To retain the arguments if present. */
         props[ _ROUTE_ARGS ]
-            && (page[ _ROUTE_ARGS ] = props[ _ROUTE_ARGS ]);
+        && (page[ _ROUTE_ARGS ] = props[ _ROUTE_ARGS ]);
 
         /* 是否支持多实例, 如支持多实例则祖先仅终不会被添加至 DOM 中 */
         isAncestor
-            && Object.defineProperty(
-                page,
-                _MULTIPLE_INSTANCES,
-                { value: 1, writable: 0 }
-            );
+        && Object.defineProperty(
+            page,
+            _MULTIPLE_INSTANCES,
+            { value: 1, writable: 0 }
+        );
 
         /* 解析切换效果配置 */
         _settle_animation( page, props );
@@ -3154,7 +3319,7 @@
 
         return page;
     }
-    
+
     /**
      * 注册 trigger 如果 props 中包含该配置节点。
      *
@@ -3191,7 +3356,7 @@
 
                 /* 不设置 once 默认指只触发一次 */
                 trigger_directive[ 'once' ]
-                        && (trigger['once'] = !! 1);/* listen once */
+                && (trigger['once'] = !! 1);/* listen once */
 
                 stack.push( trigger );
             }
@@ -3230,7 +3395,7 @@
 
             /* 如果有只触发一次的 trigger 被移除, 则需要同步至 _triggers */
             origin.length !== result.length
-                && (_triggers[ host ] = host[ state ] = origin);
+            && (_triggers[ host ] = host[ state ] = origin);
         }
 
         return result;
@@ -3254,7 +3419,7 @@
     function _mark_content_was_loaded(page) {
         page[ _FLAG_CONTENT_LOADED ] = !! 1;
     }
-    
+
     /**
      * 标记 Page 的实例已初始化。
      *
@@ -3318,8 +3483,8 @@
     function _is_special_raw_route(route) {
         /* TODO(XCL): 重新定义 Magic back */
         return is_native_mode()
-                ? !! 1
-                : route && '!' === route.charAt( 1 );
+            ? !! 1
+            : route && '!' === route.charAt( 1 );
     }
 
     /**
@@ -3381,9 +3546,9 @@
     function _override_args(id, args) {
         /* TODO(XCL): 校验参数的合法性 */
         var x = _get_page( id );
-        
+
         x && (x[ _ROUTE_ARGS ] = args);
-    
+
         /**
          * TODO(XCL): 是否也同步将 localSession state 更新.
          *
@@ -3420,8 +3585,8 @@
      */
     function _has_args(href_or_hash) {
         return is_native_mode()
-                ? 1
-                : -1 ^ href_or_hash.indexOf( _ARG_STRIPPER );
+            ? 1
+            : -1 ^ href_or_hash.indexOf( _ARG_STRIPPER );
     }
 
     var _ARG_VALUE_EMPTY = '';
@@ -3498,8 +3663,8 @@
     function _is_same_page_spec(l, r) {
         return l
             && r
-                && l[ _ROUTE ] == r[ _ROUTE ]
-                    && _is_same_args( l[ _ROUTE_ARGS ], r[ _ROUTE_ARGS ] );
+            && l[ _ROUTE ] === r[ _ROUTE ]
+            && _is_same_args( l[ _ROUTE_ARGS ], r[ _ROUTE_ARGS ] );
     }
 
     /**
@@ -3518,7 +3683,7 @@
         if ( originHash === page[ _ROUTE ] ) {
             /* 更新 args */
             _override_args( page[ _ID ], originArgs );
-            
+
             _request_go( page[ _ID ] );
         }
     }
@@ -3577,7 +3742,7 @@
 
     /* 当前状态 */
     var _current_state              = {};
-    
+
     /**
      * 创建 state 用于 History.
      *
@@ -3592,7 +3757,7 @@
 
         return state;
     }
-    
+
     /**
      * 是否为后退 action.
      *
@@ -3607,7 +3772,7 @@
             || event.state[ _BSR_IDX ] === 0
             || event.state[ _BSR_IDX ] < current[ _BSR_IDX ];
     }
-    
+
     /**
      * 处理后退 action.
      *
@@ -3621,7 +3786,7 @@
 
     /* XXX(XCL): 是否应该支持 forward 操作 */
     function _handle_forward(event) {}
-    
+
     /**
      * 是否为有效的 State pop event。
      *
@@ -3653,7 +3818,7 @@
 
                 if ( last_state ) {
                     var previous_state = ss.getItem( '#' + --persistent_session_stack_idx_offset );
-    
+
                     if ( previous_state ) {
                         var url;
 
@@ -3676,7 +3841,7 @@
                     } else {
                         location.reload();
                     }
-                    
+
                     //if ( last_state && 'href' in last_state ) {
                     //    if ( location.href != last_state.href ) {
                     //        location.reload();
@@ -3721,8 +3886,8 @@
      * @private
      */
     var _ORIGIN_HASH = _is_page_route( location.hash )
-                        ? _resolve_frag_spec( location.hash )
-                        : void 0;
+        ? _resolve_frag_spec( location.hash )
+        : void 0;
 
     var _on_trans_ended = function() {
         _handle_delayed_hash_change_event();
@@ -3800,7 +3965,7 @@
             ? location.pathname + location.search
             : location.hash;
     }
-    
+
     /**
      * 获取当前 route.
      *
@@ -3813,7 +3978,7 @@
             args:   _decode_args( location.search.substr( 1 ) )
         };
     }
-    
+
     /**
      * 从一个 link 中提取 route 信息。
      *
@@ -3866,22 +4031,22 @@
 
             /* 索引, 参数对儿, 参数名, 参数, 数组 */
             idx, pair, key, value, set;
-        
+
         /* 用于保留单元素的数组类型 */
         var array_typed;
-        
+
         if ( array.length ) {
             array_typed = {};
-            
+
             /* 不区分数组/非数组 */
             var uniform_args = args_sequence.split( '&' ),
                 explain;
-            
+
             for ( idx in uniform_args ) {
                 pair = uniform_args[ idx ];
-                
+
                 explain = pair.split( '[]=' );
-                
+
                 if ( explain.length === 2 && ! ( array_typed [ explain[ 0 ] ] ) ) {
                     array_typed[ explain[ 0 ] ] = 1;
                 }
@@ -3906,7 +4071,7 @@
             } else {
                 args[ key ] = array_typed[ key ] ? [ value ] : value;
             }
-    
+
             counter++;
         }
 
@@ -4058,32 +4223,32 @@
     }
 
     /* --------------------------------------------------------------------- */
-    
+
     function collect_current_page_elements() {
         return $x._viewport.children( '.page-ui' );
     }
-    
+
     function restore_page_elements() {
         var layout_id       = get_layout_id.call( this );
         var saved_elements  = _sandbox_dom_container[ layout_id ];
-        
+
         if ( saved_elements ) {
             if ( $x.isString( saved_elements ) )
                 saved_elements = $( saved_elements );
-            
+
             /* Attach to the viewport */
             saved_elements.appendTo( $x._viewport );
             _sandbox_dom_container[ layout_id ] = void 0;
         }
 
         ( ( typeof this[ _SCROLL_POSITION_Y_ ] ) !== 'undefined' )
-            && ( _restore_scroll_position( this[ _SCROLL_POSITION_Y_ ] ) );
+        && ( _restore_scroll_position( this[ _SCROLL_POSITION_Y_ ] ) );
     }
-    
+
     function save_page_elements(saved_elements) {
         _sandbox_dom_container[ get_layout_id.call( this ) ] = saved_elements;
     }
-    
+
     /* --------------------------------------------------------------------- */
 
     function _restore_scroll_position(y) {
@@ -4093,11 +4258,11 @@
     function _obtain_scroll_position_y() {
         return window.scrollY;
     }
-    
+
     function _setup_scroll_restoration_for_redirect(future_y) {
         ss.setItem( _SCROLL_RESTORATION_FOR_REDIRECT, future_y );
     }
-    
+
     function _perform_scroll_restore_after_redirect_if_needed() {
         var y = ss.getItem( _SCROLL_RESTORATION_FOR_REDIRECT );
 
@@ -4122,23 +4287,23 @@
         /* TODO: alias, short */
         if ( $.isArray( id ) ) {
             var pages = [];
-            
+
             props = props || {};
-            
+
             for ( var idx in id ) {
                 pages.push( _register( id[ idx ], props ) );
             }
-            
+
             return pages;
         }
-        
+
         return _register( id, props );
     };
-    
+
     /* ------------------------------------------------------------------------
      *                              Exposed for global
      * --------------------------------------------------------------------- */
-    
+
     /**
      * $Page 开放的静态 fn, 用于定义, 跳转控制.
      *
@@ -4194,7 +4359,7 @@
             //    id      = _make_route_identify( _ORIGIN_HASH[ _ROUTE ] );
             //    args    = _ORIGIN_HASH[ _ROUTE_ARGS ]
             //}
-            
+
             /* TODO(XCL): */
             //_request_go( id, args, /* from_uri */0 );
         },
@@ -4284,27 +4449,27 @@
      * @global
      */
     win.go          = _request_go;
-    
+
     /**
      * 以没有切换效果的模式前往下一个 page
      * @global
      */
     win.goFast      = win.$Page.goFast;
-    
+
     /**
      * 后退操作
      * @global
      */
     win.back        = back;
-    
+
     /**
      * 结束当前 Page
      * @global
      */
     win.finish      = finish;
 
-   /* ----------------------------------------------------------------------- */
-    
+    /* ----------------------------------------------------------------------- */
+
     /**
      * Xfly 支持的模式。
      *
@@ -4318,14 +4483,14 @@
 
     /* 标识处理导航的模式 */
     var mode    = SANDBOX;
-    
+
     /**
      * 是否为非 hash 模式。
      *
      * @returns {boolean}
      */
     function is_native_mode() { return mode == NATIVE; }
-    
+
     function is_sandbox_mode() { return mode == SANDBOX; }
 
     /**
@@ -4351,7 +4516,7 @@
 
     /* 根级 Page 标识(这是一个特例, 实际定义的 Page 可能为 home/main) */
     var ROOT = '/';
-    
+
     /**
      * 构建一个 URL 用于 Pulling 远程的 DOM tree.
      *
@@ -4369,7 +4534,7 @@
     function _is_page_navigation_link($link) {
         return $link.is( '.xfly-page__nav' ) || $link.is( '.xfly-page__back' );
     }
-    
+
     /**
      * 处理 link 点击事件。
      *
@@ -4379,30 +4544,30 @@
      */
     function _process_page_navigation_link($link) {
         var href = $link.attr( 'href' );
-        
+
         if ( $link.is( '.xfly-page__nav' ) && href ) {
             var route = _extract_route_from_link( href );
-            
+
             _request_go( route.target, route.args );
-            
+
             return !! 1;
         }
         else if ( $link.is( '.xfly-page__back' )
             || ~ ( href || '' ).indexOf( '#!-' ) ) {
             history.back();
-            
+
             return !! 1;
         }
-        
+
         /* 是否为站内常规 Hyper Link */
         if ( 0 === ( href || '' ).indexOf( '/' ) )
             _persistent_state_for_redirect( href );
     }
-    
+
     /* ----------------------------------------------------------------------- /
      *                       以下为 Swipe to refresh 扩展提供支持                /
      * ---------------------------------------------------------------------- */
-    
+
     /**
      * 获取当前 page.
      *
@@ -4412,20 +4577,33 @@
     win.getCurrentPage = function() {
         return _current;
     };
-    
+
     /* ---------------------------------------------------------------------- */
-    
+
+    _transits[ fx.slide ] = _make_animation_scheme(
+        _TRANSIT_YES, _TRANSIT_YES,
+        _TRANSIT_YES, _TRANSIT_YES );
+    _transits[ fx.cover ] = _make_animation_scheme(
+        _TRANSIT_YES, _TRANSIT_YES,
+        _TRANSIT_YES, _TRANSIT_YES,
+        $x.brisk_cubic_bezier );
+    _transits[ fx.fade ] = _make_animation_scheme(
+        _TRANSIT_YES, _TRANSIT_NONE,
+        _TRANSIT_YES, _TRANSIT_NONE );
+    _transits[ fx.none ] = _make_animation_scheme(
+        _TRANSIT_NONE );
+
     try {
         var check = 'xfly.ss';
-        
+
         ss = sessionStorage;
-        
+
         ss.setItem( check, 1 );
         ss.removeItem( check );
-        
+
         persistent_session_stack_idx_offset
             = parseInt( ss.getItem( SESSION_CURRENT_STATE ) ) || 0;
-        
+
         session_storage_supported = !! 1;
     } catch(e) {}
 
@@ -4435,7 +4613,7 @@
     $( function() {
         var route = _get_current_route();
 
-        if ( 0 && ROOT == route.target ) {
+        if ( 0 && ROOT === route.target ) {
             /* 装载默认的 page */
         }
         else {
@@ -4443,59 +4621,59 @@
             var boot_loader = function () {
                 var first,
                     layout;
-                
+
                 var pageId;
-    
+
                 /* To apply the params as args */
                 _override_args( route.target, route.args );
-    
+
                 if ( _is_support_multi_instance( route.target ) ) {
                     /* TODO(XCL): Generate the drive */
-        
+
                     /**
                      * 对于多实例 page 我们使用在其基本 id 之上加 args 的 hash 用于区分，
                      * 如：ui.view#123456
                      */
                     var deriveId =
-                            _calculate_derive_key( route.target, route.args );
-        
+                        _calculate_derive_key( route.target, route.args );
+
                     /**
                      * XXX: 实际上我们是依赖 args 的不同来维护多实例，但这并不意味着允
                      *      许 args 为 null。
                      */
-                    if ( route.target == deriveId ) {
+                    if ( route.target === deriveId ) {
                         pageId = route.target;
                     } else {
                         if ( ! _exist( deriveId ) )
                             _build_derive( route.target, deriveId, route.args );
-            
+
                         pageId = deriveId;
                     }
                 } else {
                     pageId = route.target;
                 }
-    
+
                 /* Assign for current */
                 first   = _get_page( pageId );
                 layout  = $( '.xfly-page' );
 
-                // if ( ! is_sandbox_mode() ) {
-                //     layout.css( 'z-index', first[ _STACK_INDEX_ ] );
-                // }
-                
+                if ( ! is_sandbox_mode() ) {
+                    layout.css( 'z-index', first[ _STACK_INDEX_ ] );
+                }
+
                 /* 标识 Page 实例已初始化 */
                 _mark_was_instantiated( first );
-    
+
                 /* ----- 如果为首次呈现则需要执行一系列的初始动作 Lifecycle { ---- */
-    
+
                 /* FIXME(XCL): 不管是否被暂停这里绝对执行恢复操作 */
                 _move_to_state( first, RESUMED );
-    
+
                 /* ---------------------- Lifecycle } ----------------------- */
-    
+
                 if ( history_api_supported ) {
                     /*_add_to_back_stack( first );*/
-        
+
                     /* FIXME(XCL): Set up the initiate state */
                     history.replaceState(
                         _new_state(),
@@ -4503,15 +4681,15 @@
                         _build_url_for_render( first )
                     );
                 }
-    
+
                 /* 设为当前 page */
                 _current                    = first;
                 _current_state[ _BSR_IDX ]  = _FIRST_STATE;
-    
+
                 if ( session_storage_supported ) {
                     var last_state = ss.getItem(
                         '#' + ss.getItem( SESSION_CURRENT_STATE ) );
-                    
+
                     /* 是否为 Redirect 行为 */
                     if ( last_state ) {
                         /* 是否为 F5 OR Control + F5 操作 */
@@ -4532,36 +4710,65 @@
                     }
                 }
             };
-            
+
             /* 关联 page 实例 */
             if ( _exist( route.target ) ) {
                 boot_loader();
             } else {
                 _should_lazy_load( route.target )
-                    && _setup_pending_boot_page( route.target, boot_loader );
+                && _setup_pending_boot_page( route.target, boot_loader );
             }
         }
-    
+
         /* TODO(XCL): addEventListener */
         /*_LISTENER_HASH_CHANGE in win && ( window[ _LISTENER_HASH_CHANGE ] =
             _on_navigation_change );*/
-    
+
         /* 用来处理全部 link 的点击事件 */
         $( document ).on( 'click', 'a', function(e) {
             return ! _process_page_navigation_link( $( e.currentTarget ) );
         } );
-    
+
         /* Manipulating the browser history */
         history_api_supported
-            && ( window.addEventListener( _LISTEN_WINDOW_POP_STATE, _pop_state_handler ) );
+        && ( window.addEventListener( _LISTEN_WINDOW_POP_STATE, _pop_state_handler ) );
 
         /* Handle the scroll restoration after redirect if needed */
         if ( scroll_restoration_supported ) {
             history.scrollRestoration = 'manual';
 
             session_storage_supported
-                && ( _perform_scroll_restore_after_redirect_if_needed() );
+            && ( _perform_scroll_restore_after_redirect_if_needed() );
         }
+
+        /**
+         * 差集
+         *
+         * window.diff_set = function(left, right) {
+         *   var map_l = {}, map_r = {};
+         *
+         *  for ( var idx in left ) {
+         *      map_l[ left[ idx ] ] = !! 0;
+         *  }
+         *  for ( var idx in right ) {
+         *      if ( map_r[ right[ idx ] ] = right[ idx ] in map_l ) {
+         *          map_l[ right[ idx ] ] = !! 1;
+         *     }
+         * }
+         *
+         *        for ( var idx in left ) {
+         *           if ( ! map_l[ left[ idx ] ] ) {
+         *              map_l[ left[ idx ] ] = left[ idx ] in map_r;
+         *         }
+         *    }
+         *
+         *    console.dir( map_l );
+         *    console.dir( map_r );
+         * };
+         *
+         * function intersection_set(left, right) {
+         * }
+         */
 
         /**
          * 配置 CSS Transform 硬件加速
@@ -4570,35 +4777,35 @@
          *    set_gpu_accelerated_compositing_enabled( viewport, ! ($x.os.ios && $x.browser.qqx5) );
          * }(document.body));
          */
-    
+
         /* -------------------- 实现 scroll end 事件侦测 ---------------------- */
-        
-        //var max_scroll_y = document.body.clientHeight - window.screen.height;
-    
+
+        /*var max_scroll_y = document.body.clientHeight - window.screen.height;*/
+
         /* 记录最后 scroll 的 y 值 */
         var last_scroll_y;
         /* Timer id 用于检测滚动停止 */
         var scroll_end_checker;
-    
+
         function prepare_checking_for_scroll_end() {
             remove_scroll_end_checker();
-        
+
             scroll_end_checker = setTimeout( function () {
-                if ( last_scroll_y == window.scrollY ) {
+                if ( last_scroll_y === window.scrollY ) {
                     remove_scroll_end_checker();
-                
+
                     $x._viewport.trigger( 'scroll:end', last_scroll_y );
                 }
             }, 100 );
         }
-    
+
         function remove_scroll_end_checker() {
             if ( scroll_end_checker ) {
                 clearTimeout( scroll_end_checker );
                 scroll_end_checker = void 0;
             }
         }
-    
+
         $( window ).on( 'scroll', function () {
             last_scroll_y = window.scrollY;
             prepare_checking_for_scroll_end();
