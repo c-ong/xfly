@@ -99,11 +99,17 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples](htt
 
 ![Xfly](https://github.com/c-ong/xfly/blob/master/screenshots/xfly.png?raw=true)
 
+# Tips
+* If your are running without server-side render, you can provide a custom 404 page for general solution, just like this [404.html](https://github.com/c-ong/c-ong.github.io/blob/master/404.html).
 
-# Further Features
+
+# Road map
+## Inprogress
 * Scroll restoration supported
+## Planned
 * Failure handle while fetch the view
-* Desktop browser supported(like IE);
+* Desktop browser supported(like IE)
+* State-full triggers supported
 
 
 # Legacy version is here(Hash based)
