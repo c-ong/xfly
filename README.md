@@ -19,7 +19,7 @@ This is SPA framework for the lite Web App with Modern browser.
 * Reduce the resources request
 * Reduce costs(eg. CDN、Bandwidth...)
 * Focus your things, no matter that routing、flow and MORE...
-* Lightweight(16KB compressed, gzip enabled be better)
+* Lightweight(15KB compressed, gzip enabled be better)
 
 # Getting started
 **1: Prepare for your playground**
@@ -110,6 +110,7 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples](htt
 * Failure handle while fetch the view
 * Desktop browser supported(like IE)
 * State-full triggers supported
+* Specific page extension name supported(eg. article.html、detail.php...)
 
 
 # Legacy version is here(Hash based)
