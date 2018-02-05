@@ -1,7 +1,7 @@
 var gulp        = require('gulp');
 var uglify      = require('gulp-uglify');
 var rename      = require('gulp-rename');
-var gulp_copy   = require('gulp-copy');
+// var gulp_copy   = require('gulp-copy');
 
 
 gulp.task('compress', function() {
@@ -26,5 +26,5 @@ gulp.task( 'copy', function () {
 gulp.task('default', function() {
     // place code for your default task here
     gulp.run( 'compress' );
-    gulp.run( 'copy' );
+    // gulp.run( 'copy' );
 });
