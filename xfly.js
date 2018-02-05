@@ -158,7 +158,7 @@
     "use strict";
 
     /* 版本号 */
-    var VERSION = '0.1.50';
+    var VERSION = '0.1.51';
 
     var _       = xfly || {};
     
@@ -1775,17 +1775,6 @@
     }
 
     /**
-     * 分解 fx, 如果正确则返回, 反则返回默认值.
-     *
-     * @param fx
-     * @returns {string}
-     * @private
-     */
-    function _resolve_fx(fx) {
-        return fx && fx in win.fx ? fx : win.fx.slide;
-    }
-
-    /**
      * 是否没有切换效果?
      *
      * @param transition
@@ -3118,7 +3107,7 @@
             );
 
         /* 解析切换效果配置 */
-        _settle_animation( page, props );
+        // _settle_animation( page, props );
 
         /* ----------------------------------------------------------------- */
 
@@ -3277,20 +3266,6 @@
         if ( _current == page ) {
             _on_current_page_content_loaded();
         }
-    }
-
-    /**
-     * 解析切换效果配置.
-     *
-     * @param page
-     * @param props
-     * @private
-     */
-    function _settle_animation(page, props) {
-        if ( ! ( props[ _ANIMATION ] ) )
-            return;
-
-        page[ _ANIMATION ] = _resolve_fx( props[ _ANIMATION ] );
     }
 
     /**
@@ -4058,7 +4033,26 @@
     }
 
     /* --------------------------------------------------------------------- */
-    
+
+    function _has_condition_expression_present($link) {
+        return !! ( $link.data('if') && $link.data('else-href') );
+    }
+
+    function _eval_condition($link) {
+        var fn      = new Function( 'return ' + $link.data( 'if' ) );
+        var result  = 1;
+
+        try {
+            result = fn();
+        } finally {
+            fn = void 0;
+        }
+
+        return !! result;
+    }
+
+    /* --------------------------------------------------------------------- */
+
     function collect_current_page_elements() {
         return $x._viewport.children( '.page-ui' );
     }
@@ -4369,7 +4363,22 @@
     function _is_page_navigation_link($link) {
         return $link.is( '.xfly-page__nav' ) || $link.is( '.xfly-page__back' );
     }
-    
+
+    function _process_forward_navigation($link) {
+        var target_href = $link.attr( 'href' );
+
+        if ( _has_condition_expression_present( $link ) ) {
+            if ( ! _eval_condition( $link ) )
+                target_href = $link.data( 'else-href' );
+        }
+
+        var route = _extract_route_from_link( target_href );
+
+        _request_go( route.target, route.args );
+
+        return !! 1;
+    }
+
     /**
      * 处理 link 点击事件。
      *
@@ -4381,11 +4390,7 @@
         var href = $link.attr( 'href' );
         
         if ( $link.is( '.xfly-page__nav' ) && href ) {
-            var route = _extract_route_from_link( href );
-            
-            _request_go( route.target, route.args );
-            
-            return !! 1;
+            return _process_forward_navigation( $link );
         }
         else if ( $link.is( '.xfly-page__back' )
             || ~ ( href || '' ).indexOf( '#!-' ) ) {
@@ -4584,7 +4589,7 @@
             remove_scroll_end_checker();
         
             scroll_end_checker = setTimeout( function () {
-                if ( last_scroll_y == window.scrollY ) {
+                if ( last_scroll_y === window.scrollY ) {
                     remove_scroll_end_checker();
                 
                     $x._viewport.trigger( 'scroll:end', last_scroll_y );

@@ -106,12 +106,12 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 # Road map
 ## Inprogress
 * Scroll restoration supported
+* Simple logic express support for nav forward link
 ## Planned
 * Failure handle while fetch the view
 * Desktop browser supported(like IE)
 * State-full triggers supported
 * Specific page extension name supported(eg. article.html、detail.php...)
-* Simple logic express support for nav link
 
 
 # Legacy version is here(Hash based)
