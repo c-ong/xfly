@@ -42,7 +42,7 @@ $Page.define('you.path.name', {
 
     html: '<div class="page-ui">' +
             '<h1>Hello</h1>' +
-            '<a class="xfly-page__nav" href="you/other/page">Go to the Next page</a>' +
+            '<a class="xfly-page__nav" data-if="hasMember" href="you/primary/page" data-else-href="you/second/page">Go to the Next page</a>' +
           '</div>',
 
     onCreateView: function() {
@@ -73,17 +73,17 @@ $Page.define('you.path.name', {
 
 **2: Navigation behavior**
 
-**Forward:**
+**Forward(with Logic Expression):**
 ```html
-<a class="xfly-page__nav" href="you/other/page">Go to the Next page</a>'
+<a class="xfly-page__nav" data-if="hasMember" href="you/primary/page" data-else-href="you/second/page">Go to the Next page</a>
 ```
 OR
 ```js
-go( 'you.other.page' );
+go( 'you.primary.page' );
 ```
 **Backward:**
 ```html
-<a class="xfly-page__back" href="">Get back</a>'
+<a class="xfly-page__back" href="">Get back</a>
 ```
 OR
 ```js
@@ -99,12 +99,25 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 
 ![Xfly](https://github.com/c-ong/xfly/blob/master/screenshots/xfly.png?raw=true)
 
+
+# Documents
+## Page model props
+In composing...
+
+## Page instance methods
+In composing...
+
+## Global configs
+In composing...
+
+## Global methods
+In composing...
+
 # Tips
 * If your are running without server-side render, you can provide a custom 404 page for general solution, just like this [404.html](https://github.com/c-ong/c-ong.github.io/blob/master/404.html).
 
-
 # Road map
-## Inprogress
+## In-progress
 * Scroll restoration supported
 * Simple logic express support for nav forward link
 ## Planned
