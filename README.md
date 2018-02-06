@@ -1,5 +1,5 @@
 # Xfly
-This is SPA framework for the lite Web App with Modern browser.
+A SPA framework for the Mobile Web.
 
 # Features
 * Page life-cycle supported(refer Android、iOS);
