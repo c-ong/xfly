@@ -1,7 +1,9 @@
 # Xfly
+
 A SPA framework for the Mobile Web.
 
 # Features
+
 * Page life-cycle supported(refer Android、iOS);
 * SEO friendly(Server side render needed);
 * Pre-load;
@@ -13,6 +15,7 @@ A SPA framework for the Mobile Web.
 * Easy way for Query string accessing;
 
 # Why Xfly?
+
 * Enhancement that responsiveness for fast
 * State-driven programing(similar Native App)
 * Make your DOMs be Pretty and Clean
@@ -22,7 +25,8 @@ A SPA framework for the Mobile Web.
 * Lightweight(15KB compressed, gzip enabled be better)
 
 # Getting started
-**1: Prepare for your playground**
+
+## 1: Prepare for your playground
 
 * Server:
 ```smartyconfig
@@ -30,7 +34,7 @@ Ngingx OR Apache
 ```
 * Zepto lib are required
 
-**2: Define the page model**
+## 2: Define the page model
 
 **IMPORTANT**: 
 * every DOMs of page, there are need to add the "page-ui" class at root element.
@@ -71,7 +75,7 @@ $Page.define('you.path.name', {
 });
 ```
 
-**2: Navigation behavior**
+## 3: Navigation behavior
 
 **Forward(with Logic Expression):**
 ```html
@@ -89,9 +93,9 @@ OR
 ```js
 back();
 ```
-**3: Almost done**
+## 4: Almost done
 
-Be careful the Browser Cache, good luck for YOUR.
+Be careful, the Browser Cache, GOOD LUCK FOR YOU.
 
 
 # Examples
@@ -108,7 +112,7 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 * `html` `String` Used as view of the page
 * `url` `String` Used to load the view of the page via XHR request
 * `trigger` `Object` Define a trigger 
-```javascript
+```js
  trigger: { 
      on:    'home', 
      state: 'show', 
