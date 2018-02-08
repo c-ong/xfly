@@ -106,6 +106,7 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 
 * `title` `String` Title of the page
 * `html` `String` Used as view of the page
+* `url` `String` Used to load the view of the page via XHR request
 * `trigger` `Object` Define a trigger 
 ```javascript
  trigger: { 
@@ -113,13 +114,33 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
      state: 'show', 
      do:    function() {} 
 }
- ```
+```
+* `multitask` `Boolean` Indicate whether the page is multi-instance, default is `false`
+* `args` `Object` Pre-define the Query strings of the Page
+
+## Lifecycle callback of Page
+
+* `onCreate` Called when the instance of Page is created
+* `onCreateView` Called when the view of Page will create
+* `onStart` Called after the view of Page is created 
+* `onAttach` Called when the view of Page is attached to the `document.body` 
+* `onResume` Called after the view of Page is attached and be `visible` 
+* `onPause` Called when the User requesting the navigation forward 
+* `onStop` Called after the page is `paused` 
+* `onDetach` Called after the page is `paused` and the View of page will detach from the `document.body`
+* `onStop` Called after the view of page is `detached`
+* `onDestroyView` _Controversial, not implemented yet_
+* `onDestroy` _Controversial, not implemented yet_
 ...
 
 
 ## Page instance methods
 
-In composing...
+* `setTitle(String)` `void` Update the `document.title`
+* `getArgs()` `Object` Accessing the Query strings of the Page
+* `render( { html: '' } / { url: '' } )` `void` Request the rendering operation  
+* `reload` `void` To trigger reload the View of the Page
+...
 
 ## Global configs
 

@@ -1751,65 +1751,6 @@
         }*/
     }
 
-    /**
-     * 构建一个 animation-name 用于效果呈现, 如 page-slide-enter.
-     *
-     * @param {string} fx
-     * @param {boolean} forward
-     * @param {boolean} rear
-     * @returns {string}
-     * @private
-     */
-    function _build_animation_name(fx, forward, rear) {
-        var key = [ 'page-', fx, '-' ];
-
-        /* 是否应用于 back stack */
-        if ( forward ) {
-            key.push( rear ? 'pop-exit' : 'enter'       );
-        } else {
-            key.push( rear ? 'exit'     : 'pop-enter'   );
-        }
-
-        return key.join( '' );
-    }
-
-    /**
-     * 是否没有切换效果?
-     *
-     * @param transition
-     * @returns {boolean}
-     * @private
-     */
-    function _is_transition_none(transition) {
-        return _TRANSITION_UNSET === transition;
-    }
-
-    // function _build_transition(fx, forward) {
-    //     /* enter, popExit, popEnter, exit */
-    //     if ( ! $x.isString( fx ) )
-    //         return _TRANSITION_NONE;
-    //
-    //     var scheme = _transits[ _resolve_fx( fx ) ];
-    //
-    //     /**
-    //      *              front        rear
-    //      * ---------------------------------
-    //      * forward:     enter    <-> popExit
-    //      * backward:    popEnter <-> exit
-    //      */
-    //     var checkRear  = forward ? 'popExit' : 'exit',
-    //         checkFront = forward ? 'enter'   : 'popEnter';
-    //
-    //     var rear  = scheme[checkRear ] && _build_animation_name( fx, forward, 1 );
-    //     var front = scheme[checkFront] && _build_animation_name( fx, forward, 0 );
-    //
-    //     return {
-    //         rear:   rear,
-    //         front:  front,
-    //         ease:   scheme['ease'] || $x.cubic_bezier
-    //     };
-    // }
-
     function _check() {}
 
     /**
