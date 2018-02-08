@@ -102,7 +102,13 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 
 # Documents
 ## Page model props
-In composing...
+
+| Name | Type | Description |
+| :--: | :----: | :---------- |
+| title | String | Title of the page |
+| html | String | Used as view of the page |
+| ... |  |  |
+
 
 ## Page instance methods
 In composing...
@@ -118,14 +124,14 @@ In composing...
 
 # Road map
 ## In-progress
-* Scroll restoration supported
-* Simple logic express support for nav forward link
+* [x] Scroll restoration supported
+* [x] Simple logic express support for nav forward link
 ## Planned
-* Failure handle while fetch the view
-* Desktop browser supported(like IE)
-* State-full triggers supported
-* Specific page extension name supported(eg. article.html、detail.php...)
-* document.baseURI support(for Sub path)
+* [] Failure handle while fetch the view
+* [] Desktop browser supported(like IE)
+* [] State-full triggers supported
+* [] Specific page extension name supported(eg. article.html、detail.php...)
+* [] document.baseURI support(for Sub path)
 ## More
 * For more features, you wishing, leave you idea
 
