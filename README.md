@@ -104,20 +104,17 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 
 ## Page model props
 
-| Name | Type | Description |
-| :--: | :----: | :---------- |
-| title | String | Title of the page |
-| html | String | Used as view of the page |
-| trigger | Object | Define a trigger 
- ```javascript
+* `title` `String` Title of the page
+* `html` `String` Used as view of the page
+* `trigger` `Object` Define a trigger 
+```javascript
  trigger: { 
-     on: 'home', 
+     on:    'home', 
      state: 'show', 
-     do: function() {} 
- }
+     do:    function() {} 
+}
  ```
- |
-| ... |  |  |
+...
 
 
 ## Page instance methods
