@@ -21,9 +21,8 @@
  *      {
  *           title:    'Untitled',    // 标题用于显示在支持的浏览器上
  *
- *           multitask: 1,            // 标明该 page 是否支持多实例,
- *                                    // 既 Multiple Instances, 此项与
- *                                    // clearContentOnLeave 互斥
+ *           multitask: 1,            // 标明该 page 是否支持多实例
+ *
  *
  *           args:     {key: 'value'} // 参数对儿
  *

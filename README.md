@@ -108,6 +108,15 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 | :--: | :----: | :---------- |
 | title | String | Title of the page |
 | html | String | Used as view of the page |
+| trigger | Object | Define a trigger 
+ ```javascript
+ trigger: { 
+     on: 'home', 
+     state: 'show', 
+     do: function() {} 
+ }
+ ```
+ |
 | ... |  |  |
 
 
