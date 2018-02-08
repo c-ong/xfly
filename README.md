@@ -126,6 +126,8 @@ In composing...
 * State-full triggers supported
 * Specific page extension name supported(eg. article.html、detail.php...)
 * document.baseURI support(for Sub path)
+## More
+* For more features, you wishing, leave you idea
 
 
 # Legacy version is here(Hash based)
