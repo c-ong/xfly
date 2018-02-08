@@ -101,6 +101,7 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 
 
 # Documents
+
 ## Page model props
 
 | Name | Type | Description |
@@ -111,28 +112,37 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 
 
 ## Page instance methods
+
 In composing...
 
 ## Global configs
+
 In composing...
 
 ## Global methods
+
 In composing...
 
 # Tips
 * If your are running without server-side render, you can provide a custom 404 page for general solution, just like this [404.html](https://github.com/c-ong/c-ong.github.io/blob/master/404.html).
 
 # Road map
+
 ## In-progress
+
 * [x] Scroll restoration supported
 * [x] Simple logic express support for nav forward link
+
 ## Planned
-* [] Failure handle while fetch the view
-* [] Desktop browser supported(like IE)
-* [] State-full triggers supported
-* [] Specific page extension name supported(eg. article.html、detail.php...)
-* [] document.baseURI support(for Sub path)
+
+* [ ] Failure handle while fetch the view
+* [ ] Desktop browser supported(like IE)
+* [ ] State-full triggers supported
+* [ ] Specific page extension name supported(eg. article.html、detail.php...)
+* [ ] document.baseURI support(for Sub path)
+
 ## More
+
 * For more features, you wishing, leave you idea
 
 
