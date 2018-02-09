@@ -114,7 +114,7 @@
  *      // 标识是否启用 lazy 模式
  *      lazyModeEnabled: true,
  *
- *      // 启用 lazy 模式后对要加载的代码进行路径规则, 目前仅支持简单的通配符 **, 以下例子将
+ *      // 启用 lazy 模式后对要加载的代码路径规则, 目前仅支持简单的通配符 **, 以下例子将
  *      // 可以匹配 module.a, module.a.b 等以 module 开头的 Page.
  *      paths: {
  *          'module**': 'other/'
@@ -126,18 +126,18 @@
  *      // 会在 page 切换之前调用, 其中 currently 指当前的 page,
  *      // upcoming 指即将呈现的 page.
  *      onBeforePageChange: function(currently, upcoming) {
- *          Do something here...
+ *          // Do something here...
  *      },
  *
  *      // 会在 page 切换完成之后调用(既切换效果呈现完毕之后), older 切换之前
  *      // 的 page, currently 指切换之后的 page.
  *      onAfterPageChange: function(older, currently) {
- *          Do something here...
+ *          // Do something here...
  *      },
  *
  *      // 会在当前 page 内容加载完成之后调用
- *      onCurrentlyPageContentLoaded: function() {
- *          Do something here...
+ *      onCurrentPageContentLoaded: function() {
+ *          // Do something here...
  *      }
  *  } );
  *
@@ -962,29 +962,9 @@
                         /* XXX(XCL): DOM 节点, 如果为祖先级实例则该 DOM 只会被用于 clone */
                         /*(frag[ _EL_ ] = {})[ _LAYOUT_ ] = layout[ 0 ];*/
     
-                        // if ( is_sandbox_mode() ) {
-
                         if ( _has_page_content( page ) )
                             restore_page_elements.call( page );
 
-                        // } else {
-                        //     /* 用于容纳 page 内容 */
-                        //     var layout;
-                        //
-                        //     if ( _has_layout_id( page ) ) {
-                        //         layout = get_layout.call( page );
-                        //     } else {
-                        //         layout = _FRAGMENT_TEMPLATE.clone();
-                        //
-                        //         /* 设置 layout id */
-                        //         _set_up_layout_id( page, layout );
-                        //
-                        //         layout.appendTo( $x._viewport );
-                        //     }
-                        //
-                        //     layout.css( 'z-index', page[ _STACK_INDEX_ ] );
-                        // }
-    
                         _invoke_handler( page, _ATTACH );
                         
                         /* ------------------------------------------------- */
@@ -1202,18 +1182,10 @@
      * @private
      */
     function _has_page_content(page) {
-        // if ( is_sandbox_mode() ) {
-
         var layout_id = get_layout_id.call( page );
 
         /* NOTE(XCL): 值为 undefined 时, 标识 page 的内容已通过网络加载完成. */
         return layout_id && typeof _sandbox_dom_container[ layout_id ] !== 'undefined';
-
-        // } else {
-        //     var layout = get_layout.call( page );
-        //
-        //     return layout.length && layout[ 0 ].parentNode && '' !== layout.html();
-        // }
     }
 
     /**
@@ -1260,10 +1232,6 @@
         
         layout_id = hash_code( instance_id );
         
-        /* 为 DOM 设置 id */
-        // if ( ! is_sandbox_mode() )
-        //     layout.attr( 'id', 'x_f' + layout_id );
-        
         page[ _EL_ ][ _LAYOUT_ID_ ] = layout_id;
         
         /* XXX(XCL):添加一个元素, 仅标识 page 内容已经加载完成 */
@@ -1283,17 +1251,10 @@
         if ( ! can_back() )
             return !! 0;
 
-        // if ( is_sandbox_mode() ) {
-
         var back_before = _current;
 
         back();
         _schedule_destroy( back_before );
-
-        // } else {
-        //     _schedule_destroy( _current );
-        //     back();
-        // }
 
         return !! 1;
     }
@@ -1786,7 +1747,7 @@
 
          * onBeforePageChange:             void 0,
          * onAfterPageChange:              void 0,
-         * onCurrentlyPageContentLoaded:   void 0
+         * onCurrentPageContentLoaded:     void 0
          */
     };
 
@@ -1911,73 +1872,11 @@
             _on_after_page_change( current, next );
         };
 
-        /**
-         * 关于切换效果:
-         * 0: 首个 page 不应该被加载动画;
-         * 1: override 优先;
-         * 2: 其次是 Front page 的 animation 定义;
-         * 3: 默认的(slide);
-         */
-        if ( is_first_page ) {
-            // transit = _build_transition( _TRANSIT_NONE );
-
-            /* 不启用动画, hidden 后也就无需 endTrans */
-            postpone_commit_trans = 0;
-        } else {
-            // if ( animation ) {
-            //     animation = _resolve_fx( animation );
-            //     /* XXX(XCL): Remember the animation of overridden */
-            //     /*next[ _OVERRIDDEN_ANIMATION ] = animation;*/
-            // } else {
-            //     animation = _get_animation( next );
-            // }
-            //
-            // transit = _build_transition( animation,
-            //                             reverse
-            //                                 ? _BACKWARD
-            //                                 : _FORWARD
-            //                             );
-            
-            // postpone_commit_trans = !! transit.rear;
-        }
-
-        /* 是否启用动画(首个 page 不应该被加载动画) */
-        /* $x.isUndefined( transit ) && (transit = ! first); */
-
         _begin_trans();
-
-        /**
-         * hide -> rear
-         * show -> front
-         * 应用 animation 时亦是如此
-         */
-        // is_sandbox_mode() || _cas_stack_if_necessary(
-        //     reverse ? next    : current,
-        //     reverse ? current : next
-        // );
-    
-        /* onVisibilityChanged */
-
-        // if ( is_sandbox_mode() ) {
 
         /* 隐藏当前 page */
         if ( current )
             _move_to_state( current, STARTED );
-
-        // } else {
-        //     _move_to_state( next, RESUMED );
-        //
-        //     /* 隐藏当前 page */
-        //     if ( current ) {
-        //         _move_to_state( current, STARTED );
-        //
-        //         _hide(
-        //             current /*, _FROM_STACK_YES, end_trans_needed */,
-        //             transit,
-        //             fire_after_page_change_event
-        //         );
-        //     }
-        // }
 
         /* FIXME(XCL): 不管是否被暂停这里绝对执行恢复操作 */
         _move_to_state( next, RESUMED );
@@ -1987,21 +1886,7 @@
 
         /* 加入 BackStack */
         if ( current && ! is_first_page ) {
-            /**
-             * if ( is_sandbox_mode() && session_storage_supported ) {
-             *   var state = _new_state();
-             *
-             *   state.href = location.href;
-             *   ss.setItem( SESSION_CURRENT_STATE, JSON.stringify( state ) );
-             * }
-             */
-            
             _add_to_back_stack( current, animation );
-            
-            /* TODO(XCL): 混合模式处理 */
-            /* history_api_supported && _setup_current_state( next, fromUri ); */
-        } else {
-            /* history_api_supported && _setup_initial_state( next, fromUri ); */
         }
 
         _current = next;
@@ -2009,21 +1894,11 @@
         /* 更新 location */
         _update_location( _FORWARD, _current );
 
-        /**
-         * 如果 trans 为后置提交, 那么这里将不在处理, 注意 Rear 与 Front 效果呈现时序
-         * 有可能不一致.
-         */
-        // if ( is_sandbox_mode() /*|| ! postpone_commit_trans*/ ) {
-
         /* 标识 trans 完成 */
         _end_trans();
 
         /* 触发 onAfterPageChange 事件 */
         fire_after_page_change_event();
-
-        // }
-        
-        /*postCommitTrans || _endTrans();*/
     }
 
     function _setup_current_state(target, from_uri) {
@@ -2063,27 +1938,6 @@
     }
 
     /**
-     * 获取用于 page 的切换效果, 优先取 Overridden 之后的 animation, 如果没有则取其
-     * 自身定义的, 再者取返回默认值.
-     *
-     * @param page
-     * @returns {string}
-     * @private
-     */
-    function _get_animation(page) {
-        /*var fx;
-
-        if ( _OVERRIDDEN_ANIMATION in page ) {
-            fx = page[ _OVERRIDDEN_ANIMATION ];
-            delete page[ _OVERRIDDEN_ANIMATION ];
-        }*/
-        if ( /*fx || */! (_ANIMATION in page) )
-            return fx.slide;
-
-        return page[ _ANIMATION ];
-    }
-
-    /**
      * 执行后退操作.
      *
      * @param animation (string)
@@ -2109,9 +1963,6 @@
         };
 
         var transit;
-        // var transit                 = _build_transition( animation, _BACKWARD ),
-            /* 标识是否为后置结束事务 */
-            // postpone_commit_trans   = !! transit.rear;
 
         _begin_trans();
 
@@ -2121,11 +1972,6 @@
         /* Step 1: 暂停当前的 page */
         _move_to_state( current, STARTED );
     
-        /* 隐藏当前 page */
-        // is_sandbox_mode() || _hide( current, transit
-        //     /* _FROM_STACK_NO, */ /* endTransNeeded */ /* 1 */,
-        //     fire_page_change_after_event );
-
         /* Step 2: 恢复 get back 的目标 */
         _move_to_state( next, RESUMED );
 
@@ -2137,15 +1983,9 @@
         /* Step 3: 支持 history 则不需要手动更新 hash */
         _update_location( _BACKWARD, _current );
 
-        // if ( is_sandbox_mode /*|| ! postpone_commit_trans*/ ) {
-
         _end_trans();
 
         fire_page_change_after_event();
-
-        // }
-        
-        /*postponeCommitTrans*/ /*ALWAYS_POST_COMMIT_ON_BACK*/ /*|| _endTrans();*/
 
         /* TODO(XCL): 对于非 multitask 的后退操作, 如果在后退之前 args 被更新则需要同步 hash */
         if ( ! _is_derive( _current ) ) {
@@ -2154,15 +1994,6 @@
             if ( ! _is_same_args( _current[ _ROUTE_ARGS ], currentlyArgs ) ) {
                 _apply_new_args( _current );
             }
-
-            /**
-             * Used for hash mode.
-             *
-             * var currentlyArgs = _extract_args( location.hash );
-             * if ( ! _is_same_args( next[ _ROUTE_ARGS ], currentlyArgs ) ) {
-             *   _apply_hash( _current );
-             * }
-             */
         }
     }
 
@@ -2180,18 +2011,11 @@
     
         _invoke_handler( target, [ _STOP, _DESTROY_VIEW, _DESTROY, _DETACH ] );
         
-        //if ( is_sandbox_mode() ) {
-
         var layout_id = get_layout_id.call( target );
 
         _sandbox_dom_container[ layout_id ] = void 0;
         /* FIXME(XCL): 这里 delete 掉可能会导致 Page 加载两次(reload 被调用的前提下) */
         delete _sandbox_dom_container[ layout_id ];
-
-        //} else {
-            /* DOM 移除 */
-            //get_layout.call( target ).remove();
-        //}
 
         target[ _EL_ ]              = {};
         target[ _RENDER_CALLED_ ]   = !! 0;
@@ -2208,11 +2032,6 @@
 
         var trigger = 0;
         
-        // if ( ! is_sandbox_mode() ) {
-        //     trigger = $.fx.speeds.slow * ( $.fx.off ? .2 : 1.2 )
-        //                 /*$.fx.speeds.slow * 10 + 25*/;
-        // }
-
         /* 记录 task 以备意外清空下取消 */
         who['destroy_task_id'] = setTimeout( function() {
             _perform_destroy( id );
@@ -2258,14 +2077,6 @@
         /* Show the dom */
         layout.show();
 
-        // transit.front
-        //     &&
-        //     layout.animate(
-        //         transit.front,
-        //         $.fx.speeds.slow,
-        //         transit.ease/*$x.cubic_bezier*//*'linear'*/
-        //     );
-
         /* 提取并执行触发器定义的操作 */
         _fire_trigger_if_necessary.call( target, 'show' );
     }
@@ -2300,27 +2111,6 @@
      * @private
      */
     function _hide(target, transit, firer) {
-        // var layout = get_layout.call( target );
-        //
-        // if ( transit.rear ) {
-        //     /* properties, duration, ease, callback, delay */
-        //     layout.animate(
-        //         transit.rear,
-        //         $.fx.speeds.slow,
-        //         transit.ease/*$x.cubic_bezier*//*'linear'*/,
-        //         function () {
-        //             if ( ! is_sandbox_mode() )
-        //                 layout.hide();
-        //
-        //             _end_trans();
-        //
-        //             firer && firer();
-        //         }
-        //     );
-        // } else {
-        //     if ( ! is_sandbox_mode() )
-        //         layout.hide();
-        // }
     }
 
     /* --------------------------------------------------------------------- */
@@ -2487,41 +2277,6 @@
 
     /* --------------------------------------------------------------------- */
 
-    ///**
-    // * page 被暂停.
-    // *
-    // * @param page
-    // */
-    //function pause(page) {
-    //    _update_scroller_enabled( page[ _SCROLLER ], false );
-    //
-    //    _invoke_handler( page, _PAUSE );
-    //}
-
-    ///**
-    // * page 被停止.
-    // *
-    // * @param page
-    // */
-    //function stop(page) {
-    //    _invoke_handler( page, _STOP );
-    //}
-
-    //function destroy_view(page) {
-    //    _invoke_handler( page, _DESTROY_VIEW );
-    //}
-
-    //function destroy(page) {
-    //    _invoke_handler( page, _DESTROY );
-    //}
-
-    //function detach(page) {
-    //    _invoke_handler( page, _DETACH );
-    //    save_page_elements.call( page, collect_current_page_elements().remove() );
-    //}
-
-    /* --------------------------------------------------------------------- */
-
     function _resolve_requires(requires) {
         /* TODO(XCL): adv */
     }
@@ -2547,8 +2302,6 @@
         /* ----------------------------------------------------------------- */
 
         /* 对一个 page 开放的实例方法 */
-        /*_bind_methods( derive );*/
-
         /* 派生的标识(用到标识唯一) */
         Object.defineProperty(
             derive,
@@ -2560,22 +2313,10 @@
         // derive[ _STACK_INDEX_ ] = $x.alloZIndex( $x.FRAGMENT );
         /* XXX: DOM 节点, 如果为祖先级实例则该 DOM 只会被用于 clone */
         derive[ _EL_ ] = {};
-        /*(derive[ _EL_ ] = {})[ _LAYOUT_ ] = _FRAGMENT_TEMPLATE.clone()[ 0 ];*/
 
         /* To retain the arguments if present. */
         derive[ _ROUTE_ARGS ] = args;
     
-        /**
-         * 填充 HTML 片段，如果已指定该字段
-         * if ( _HTML in derive ) {
-         *   _invokeRender( derive );
-         *   _renderWithHtml.call( derive, { html: derive[ _HTML ] } );
-         * } else if ( _URL in derive ) {
-         *   _invokeRender( derive );
-         *   _renderWithUrl.call( derive, { url: derive[ _URL ] } );
-         * }
-         */
-
         /* 将 clone 的 page 放入容器 */
         _add( derive );
 
@@ -2993,8 +2734,7 @@
             && !! props[ _MULTIPLE_INSTANCES ];
 
         /* 分配一个 idx 实际上就是 z-index */
-        var /*stackIdx = $x.alloZIndex( $x.FRAGMENT ),*/
-            requires;
+        var requires;
 
         /**
          * 用于容纳 page 内容
@@ -3021,8 +2761,6 @@
 
         /* Page 的 id */
         page[ _ID ]             = id;
-        /* 叠放次序 */
-        //page[ _STACK_INDEX_ ]   = stackIdx;
 
         /* XXX(XCL): DOM 节点, 如果为祖先级实例则该 DOM 只会被用于 clone */
         page[ _EL_ ] = {};
@@ -3046,18 +2784,13 @@
                 { value: 1, writable: 0 }
             );
 
-        /* 解析切换效果配置 */
-        // _settle_animation( page, props );
-
         /* ----------------------------------------------------------------- */
 
         /* 填充 HTML 片段，如果已指定该字段 */
         if ( props [ _HTML ] ) {
             page[ _HTML ] = props[ _HTML ];
-            // _invoke_render( page, page );
         } else if ( props[ _URL ] ) {
             page[ _URL ] = props[ _URL ];
-            // _invoke_render( page, page );
         }
 
         /* ----------------------------------------------------------------- */
@@ -3591,14 +3324,6 @@
                     } else {
                         location.reload();
                     }
-                    
-                    //if ( last_state && 'href' in last_state ) {
-                    //    if ( location.href != last_state.href ) {
-                    //        location.reload();
-                    //    } else {
-                    //        location.href = last_state.href;
-                    //    }
-                    //}
                 }
             }
 
@@ -3901,11 +3626,6 @@
         var id = _make_route_identify( hash[ _ROUTE ] );
 
         _request_go( id, hash[_ROUTE_ARGS], from_uri );
-
-        /*if ( _isSupportMultiInstance( id ) )
-            _goNextWithMultiMode( id, hash[ _ARGS ], fromUser, fromUri );
-        else
-            _goNext( id, hash[ _ARGS ], fromUser, fromUri );*/
     };
 
     /* TODO(XCL): boot in #!- */
@@ -4424,10 +4144,6 @@
                 first   = _get_page( pageId );
                 layout  = $( '.xfly-page' );
 
-                // if ( ! is_sandbox_mode() ) {
-                //     layout.css( 'z-index', first[ _STACK_INDEX_ ] );
-                // }
-                
                 /* 标识 Page 实例已初始化 */
                 _mark_was_instantiated( first );
     
@@ -4462,11 +4178,6 @@
                         /* 是否为 F5 OR Control + F5 操作 */
                         if ( decodeURI( last_state )
                             !== _build_url_for_render( _current ) ) {
-                            // _persistent_state(
-                            //     _current_state,
-                            //     document.title,
-                            //     _build_url_for_render( _current )
-                            // );
                         }
                     } else {
                         _persistent_state(

@@ -116,11 +116,15 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
  trigger: { 
      on:    'home', 
      state: 'show', 
-     do:    function() {} 
+     do:    function() {
+         
+     } 
 }
 ```
 * `multitask` `Boolean` Indicate whether the page is multi-instance, default is `false`
 * `args` `Object` Pre-define the Query strings of the Page
+* `onReload` `Function` Called when the page reload action are triggered
+* ...
 
 ## Lifecycle callback of Page
 
@@ -135,7 +139,7 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 * `onStop` Called after the view of page is `detached`
 * `onDestroyView` _Controversial, not implemented yet_
 * `onDestroy` _Controversial, not implemented yet_
-...
+* ...
 
 
 ## Page instance methods
@@ -144,15 +148,23 @@ See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code
 * `getArgs()` `Object` Accessing the Query strings of the Page
 * `render( { html: '' } / { url: '' } )` `void` Request the rendering operation  
 * `reload` `void` To trigger reload the View of the Page
-...
+* ...
 
 ## Global configs
 
-In composing...
+* `onBeforePageChange(currently, upcoming)` `Function` Called before the Page switch
+* `onAfterPageChange(older, currently)` `Function` Called after the Page switched
+* `onCurrentPageContentLoaded()` `Function` Called when the view of Page is load
+* ...
 
 ## Global methods
 
-In composing...
+* `go(id, args)` `void` Request the navigation forward, `args` is optional
+```js
+go( 'you.page.id', { key: 'value' } );
+```
+* `back()` `void` Request the navigation backward
+* ...
 
 # Tips
 * If your are running without server-side render, you can provide a custom 404 page for general solution, just like this [404.html](https://github.com/c-ong/c-ong.github.io/blob/master/404.html).
