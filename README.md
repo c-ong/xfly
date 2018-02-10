@@ -32,7 +32,7 @@ A SPA framework for the Mobile Web.
 ```smartyconfig
 Ngingx OR Apache
 ```
-* Zepto lib are required
+* Zepto OR jQuery lib are required
 
 ## 2: Define the page model
 
