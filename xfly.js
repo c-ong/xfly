@@ -745,83 +745,6 @@
 
     /* --------------------------------------------------------------------- */
 
-    //function attach(page) {
-    //    /* XXX(XCL): DOM 节点, 如果为祖先级实例则该 DOM 只会被用于 clone */
-    //    /*(frag[ _EL_ ] = {})[ _LAYOUT_ ] = layout[ 0 ];*/
-    //
-    //    if ( is_sandbox_mode() ) {
-    //        if ( _has_page_content( page ) )
-    //            restore_page_elements.call( page );
-    //    } else {
-    //        /* 用于容纳 page 内容 */
-    //        var layout;
-    //
-    //        if ( _has_layout_id( page ) ) {
-    //            layout = get_layout.call( page );
-    //        } else {
-    //            layout = _FRAGMENT_TEMPLATE.clone();
-    //
-    //            /* 设置 layout id */
-    //            _set_up_layout_id( page, layout );
-    //
-    //            layout.appendTo( $x._viewport );
-    //        }
-    //
-    //        layout.css( 'z-index', page[ _STACK_INDEX_ ] );
-    //    }
-    //
-    //    _invoke_handler( page, _ATTACH );
-    //}
-
-    //function create(page) {
-    //    _invoke_handler( page, _CREATE );
-    //}
-
-    //function create_view(page) {
-    //    /* 若有后置 reload  */
-    //    page[ _FLAG_POST_RELOAD ] && ( page[ _FLAG_POST_RELOAD ] = !! 0 );
-    //    /* 重置 called flag */
-    //    page[ _RENDER_CALLED_ ] = !! 0;
-    //
-    //    _invoke_handler( page, _CREATE_VIEW );
-    //
-    //    if ( ! page[ _RENDER_CALLED_ ] ) {
-    //        _invoke_render( page, { url: _build_url_for_render( page ) } );
-    //    }
-    //}
-
-    //function start(page) {
-    //    _invoke_handler( page, _START );
-    //}
-
-    //function resume(page) {
-    //    _exec_pending_actions( page );
-    //
-    //    /* 更新 title */
-    //    _trigger_update_title( page[ _TITLE ] || $Page.title );
-    //
-    //    _invoke_handler( page, _RESUME );
-    //
-    //    /* FIXME(XCL): 未知原因 scroller 无法滚动，这里 refresh 可暂时解决 */
-    //    _update_scroller_enabled( page[ _SCROLLER ], true );
-    //    /*var scroller = page[ _SCROLLER ];
-    //    if ( scroller && scroller.length ) {
-    //        var x;
-    //
-    //        for ( var idx in scroller ) {
-    //            x = scroller[ idx ];
-    //
-    //            x.enable();
-    //
-    //            x.refresh();
-    //            x.hasVerticalScroll || (x.hasVerticalScroll = !! 1);
-    //            scroller[ idx ] = x;
-    //        }
-    //    }*/
-    //}
-
-    /* --------------------------------------------------------------------- */
-    
     function _update_scroller_enabled(scrollers, enabled) {
         if ( scrollers && scrollers.length ) {
             for ( var idx in scrollers ) {
@@ -866,26 +789,12 @@
         if ( ! page[ _FLAG_INSTANTIATED ] )
             return;
     
-        // if ( is_sandbox_mode() ) {
-
         if ( _current == page ) {
             _perform_reload( page );
         } else {
             /* 后置 reload */
             _set_up_post_reload( page );
         }
-
-        // } else {
-        //     var layout = get_layout.call( page );
-        //
-        //     if ( layout.length ) {
-        //         if ( $x.isShowing( layout ) ) {
-        //             _perform_reload( page );
-        //         } else {
-        //             _set_up_post_reload( page );
-        //         }
-        //     }
-        // }
     }
 
     /* --------------------------------------------------------------------- */
@@ -1039,7 +948,6 @@
         for ( var idx in ordered_handlers ) {
             handler_name = METHOD_HANDLERS_MAPPING[ ordered_handlers[ idx ] ];
     
-            // handler_name in registered_handlers
             registered_handlers[ handler_name ]
                 && registered_handlers[ handler_name ]
                     .apply( page, 3 in arguments ? arguments.slice( 2 ) : [] );
@@ -1065,9 +973,8 @@
 
         registered_handlers
             && registered_handlers[ handler_name ]
-            // && handler_name in registered_handlers
-            && registered_handlers[ handler_name ]
-                .apply( page, 3 in arguments ? arguments.slice( 2 ) : [] );
+                && registered_handlers[ handler_name ]
+                    .apply( page, 3 in arguments ? arguments.slice( 2 ) : [] );
     }
 
     /**
@@ -1159,7 +1066,6 @@
         var handlers = _get_handlers( page );
 
         handlers
-            //&& handler in handlers
             && handlers[ handler ]
                 && handlers[ handler ]
                     .call( page, get_layout.call( page ) );
@@ -1377,7 +1283,6 @@
 
         /* 暂时用 History API */
         history.go( from_uri ? _MAGIC_BACK_FIRER : _STANDARD_BACK );
-        /* _performBack() */
     }
 
     /**
@@ -1386,9 +1291,7 @@
      * @param up 这个即指当前 page 定义的 parent, 如果没有指定则使用默认的 home
      * @private
      */
-    var/*function*/ _navigate_up_to = _perform_navigate_up_to;/*(up) {
-        _performNavigateUpTo(up)
-    }*/
+    var/*function*/ _navigate_up_to = _perform_navigate_up_to;
 
     function _perform_navigate_up_to(up) {
         _perform_go.call( _get_page( up ), /*fromUri*/1, /*animation*/fx.slide, /*reverse*/1 );
@@ -1407,13 +1310,9 @@
         _notify_content_was_loaded( this );
     
         /* TODO(XCL): 如果 DOM 没有附载到 Document 则需要添加至其中... */
-        // if ( is_sandbox_mode() ) {
-
-        ////var is_first_page = $.isEmptyObject( _sandbox_dom_container );
 
         _set_up_layout_id( this );
 
-        /*if ( ! is_first_page ) {*/
         /* 是否为当前 Page, 是当前则更新，反则放置于 Sandbox 容器 */
         if ( _current == void 0                 /* First booting */
             || INITIALIZING == this[ _STATE_ ]  /* Rendering with static html OR onCreateView */
@@ -1427,11 +1326,6 @@
             /* NOTE(XCL): 这里放置的为 Raw HTML。 */
             _sandbox_dom_container[ get_layout_id.call( this ) ] = data[ _HTML ];
         }
-        ////}
-
-        // } else {
-        //     get_layout.call( this ).html( data[ _HTML ] );
-        // }
     }
 
     /**
@@ -1966,9 +1860,6 @@
 
         _begin_trans();
 
-        /* FIXME(XCL): 后退操作这里的 stack 是个例外, 即将呈现的不能置于量上层 */
-        // is_sandbox_mode() || _cas_stack_if_necessary( next, current );
-
         /* Step 1: 暂停当前的 page */
         _move_to_state( current, STARTED );
     
@@ -2291,7 +2182,6 @@
         if ( $.isPlainObject( handlers ) ) {
             SUPPORTED_HANDLERS.forEach( function ( fn ) {
                 handlers[ fn ] && (map[ fn ] = handlers[ fn ]);
-                // (fn in handlers) && (map[ fn ] = handlers[ fn ]);
             } );
         }
     }
@@ -3402,6 +3292,7 @@
 
     var _roll_back_for_uri_nav = function() {
         /*history.back();*/
+
         /**
          * var rewind = _convertCurrentlyHashToInner();
          * rewind && ( location.hash = _buildInnerHash( rewind ) );
@@ -3843,15 +3734,15 @@
          * @param args
          * @deprecated
          */
-        bootstrap:  function(id, args) {
-            //if ( _ORIGIN_HASH ) {
-            //    id      = _make_route_identify( _ORIGIN_HASH[ _ROUTE ] );
-            //    args    = _ORIGIN_HASH[ _ROUTE_ARGS ]
-            //}
-            
-            /* TODO(XCL): */
-            //_request_go( id, args, /* from_uri */0 );
-        },
+        // bootstrap:  function(id, args) {
+        //     //if ( _ORIGIN_HASH ) {
+        //     //    id      = _make_route_identify( _ORIGIN_HASH[ _ROUTE ] );
+        //     //    args    = _ORIGIN_HASH[ _ROUTE_ARGS ]
+        //     //}
+        //
+        //     /* TODO(XCL): */
+        //     //_request_go( id, args, /* from_uri */0 );
+        // },
 
         /**
          * 呈现指定的 page, 如: ui.about.
@@ -3867,9 +3758,9 @@
          * @param id
          * @param args
          */
-        goFast:     function(id, args) {
-            _request_go( id, args, /* from_uri = 0, */ fx.none );
-        },
+        // goFast:     function(id, args) {
+        //     _request_go( id, args, /* from_uri = 0, */ fx.none );
+        // },
 
         /**
          * 判断是否有前一个 page, 如果有则可以执行返回操作.
@@ -4229,7 +4120,7 @@
     
         /* -------------------- 实现 scroll end 事件侦测 ---------------------- */
         
-        //var max_scroll_y = document.body.clientHeight - window.screen.height;
+        // var max_scroll_y = document.body.clientHeight - window.screen.height;
     
         /* 记录最后 scroll 的 y 值 */
         var last_scroll_y;
