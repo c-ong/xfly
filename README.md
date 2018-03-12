@@ -183,6 +183,7 @@ go( 'you.page.id', { key: 'value' } );
 * [ ] State-full triggers supported
 * [ ] Specific page extension name supported(eg. article.html、detail.php...)
 * [ ] document.baseURI support(for Sub path)
+* [ ] Root path supported(treat as default)
 
 ## More
 
