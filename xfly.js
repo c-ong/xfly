@@ -153,11 +153,11 @@
  *
  * @dependents Zepto | jQuery
  */
-;!function(xfly, undefined) {
+!function(xfly, undefined) {
     "use strict";
 
     /* 版本号 */
-    var VERSION = '0.1.51';
+    var VERSION = '0.1.52';
 
     var _       = xfly || {};
     
@@ -169,8 +169,10 @@
     /* 一些判断类型的函数 */
     var isUndefined = function(who) { return who === void 0 },
         isString    = function(who) { return 'string' === typeof who },
+        isArray     = $.isArray,
         isNumber    = function(who) { return ! isUndefined( who )
             && 'number' === typeof who },
+        isFunction  = $.isFunction,
         /* 判断是否为 DOM */
         isDom       = function(who) { return $.isPlainObject( who )
             && who.nodeType > 0 },
@@ -238,6 +240,8 @@
     /* 用于判断类型的函数 */
     _.isUndefined           = isUndefined;
     _.isString              = isString;
+    _.isArray               = isArray;
+    _.isFunction            = isFunction;
     _.isNumber              = isNumber;
     _.isDom                 = isDom;
 
@@ -526,7 +530,8 @@
         
         _SCROLLER               = 'scroller';
         
-    var _CFG_LAZY_MODE_ENABLED  = 'lazyModeEnabled';
+    var _CFG_LAZY_MODE_ENABLED  = 'lazyModeEnabled',
+        _SCROLL_RESTORATION_ENABLED = 'scrollRestorationEnabled';
     
     /**
      * 一些常量。
@@ -1199,8 +1204,6 @@
 
         _begin_trans();
 
-        _cas_stack_if_necessary( current, next );
-
         /* 暂停当前 page */
         _move_to_state( current, STARTED );
         /* 隐藏当前 page */
@@ -1258,7 +1261,7 @@
      * @private
      */
     function _has_back_stack_records() {
-        return _back_stack.length;
+        return 1/*0 in _back_stack*/;
     }
 
     /* 标识操作从 URI 触发 */
@@ -1416,6 +1419,14 @@
         if ( ! _exist( id ) ) {
             if ( _config[ _CFG_LAZY_MODE_ENABLED ] ) {
                 _setup_pending_page( id, args, from_uri, animation );
+                _load_module( id );
+            } else {
+                var href = '/' + _make_id_as_xpath_route( id )
+                    + ( args ? '?' + _args_urlify( args ) : '' );
+    
+                _persistent_state_for_redirect( href );
+    
+                location.href = href;
             }
 
             return;
@@ -1521,7 +1532,7 @@
      */
     function _is_support_multi_instance(id) {
         /* derive */
-        return !! _get_page( id )[ _MULTIPLE_INSTANCES ];
+        return !! (_get_page( id ) || {})[ _MULTIPLE_INSTANCES ];
     }
 
     /**
@@ -1634,6 +1645,8 @@
          * 标识是否支持 lazy 加载模式(默认不启用)
          * lazyModeEnabled:                 !! 0,
          */
+        
+        //scrollRestorationEnabled:           ! 0,
 
         /**
          * 默认的 Home id
@@ -2007,7 +2020,7 @@
     /* --------------------------------------------------------------------- */
 
     /* FIXME: 相同 hash 不同参数不列为一个新的 Back stack record. */
-    var _back_stack = [];
+    var _runtime_back_stack = [];
 
     /**
      * 将 page 添加至 BackStack, 并返回 stack 的数量.
@@ -2030,17 +2043,18 @@
         return _push( page, animation );
     }
 
-    function _push_state(state, title, url_or_hash) {
+    function _push_history_state/*_push_state*/(state, title, url_or_hash) {
         state[ _SCROLL_POSITION_Y_ ] = _obtain_scroll_position_y();
 
-        _persistent_state( state, title, url_or_hash );
+        //_persistent_state( state, title, url_or_hash );
     
         /* TODO(XCL): Session Or Local Storage */
         history.pushState( state, title, url_or_hash );
     }
     
     function _persistent_state_for_redirect(url) {
-        _push_state( _new_state(), '', url )
+        _persistent_url_for_back( 0, '', url )
+        //_push_state( _new_state(), '', url )
     }
 
     var _PERSISTENT_STATE_SEPARATOR = ' ';
@@ -2053,9 +2067,9 @@
      * @param url_or_hash
      * @private
      */
-    function _persistent_state(state, title, url_or_hash) {
+    function _persistent_url_for_back(state, title, url_or_hash) {
         if ( session_storage_supported ) {
-            var stack_idx_for_persistent = persistent_session_stack_idx_offset++;
+            var stack_idx_for_persistent = ++persistent_session_stack_idx_offset;
     
             ss.setItem( '#' + stack_idx_for_persistent,
                 encodeURI( url_or_hash ) +      /* URL */
@@ -2129,12 +2143,22 @@
     function _update_location(action, page) {
         if ( history_api_supported ) {
             if ( _BACKWARD !== action ) {
-                _push_state(
-                    _new_state(),
-                    page[ _TITLE ],
-                    _build_url_for_render( page )
-                );
+                var state = _new_state(),
+                    title = page[ _TITLE ],
+                    url = _build_url_for_render( page );
+        
+                _persistent_url_for_back( state, title, url );
+        
+                _push_history_state( state, title, url );
             }
+            
+            //if ( _BACKWARD !== action ) {
+            //    _push_state(
+            //        _new_state(),
+            //        page[ _TITLE ],
+            //        _build_url_for_render( page )
+            //    );
+            //}
         } else {
             /* 更新至 location.hash(此后 hash 将被变更) */
             _apply_hash( page );
@@ -2159,11 +2183,11 @@
         /* XXX(XCL): Remember the animation of overridden */
         animation && (bsr[ _OVERRIDDEN_ANIMATION ] = animation);
 
-        return _back_stack[ _back_stack.length ] = bsr;
+        return _runtime_back_stack[ _runtime_back_stack.length ] = bsr;
     }
 
     function _pop() {
-        return _back_stack.pop();
+        return _runtime_back_stack.pop();
     }
 
     /* --------------------------------------------------------------------- */
@@ -2493,15 +2517,14 @@
     /* 指代将会在代码加载完成后 OR 某个特定事件结束后才呈现的 page */
     var _pending_page_info;
 
-    function _setup_pending_page( id, args, from_uri, animation ) {
+    function _setup_pending_page( id, args, from_uri, animation, boot_loader ) {
         _pending_page_info = {
             id:         id,
             args:       args,
             fromUri:    from_uri,
-            animation:  animation
+            animation:  animation,
+            bootLoader: boot_loader
         };
-        
-        _load_module( id );
     }
     
     function _setup_pending_boot_page( id, callback ) {
@@ -2580,12 +2603,16 @@
         /* 标记已处理 */
         _pending_page_info = void 0;
 
-        _request_go(
-            immediate.id,
-            immediate.args,
-            immediate.fromUri,
-            immediate.animation
-        );
+        if ( typeof immediate['bootLoader'] !== 'undefined' ) {
+            immediate.bootLoader();
+        } else {
+            _request_go(
+                immediate.id,
+                immediate.args,
+                immediate.fromUri,
+                immediate.animation
+            );
+        }
     }
 
     /**
@@ -3125,8 +3152,20 @@
      */
     function _new_state(animation) {
         var state = {};
-
-        state[ _BSR_IDX ] = _back_stack.length ? _back_stack.length - 1 : 0;
+        
+        //         home me home me
+        // size      0   1   2   3
+        // return    0   1   1   2
+    
+        state[ _BSR_IDX ] = _runtime_back_stack.length;
+        
+        //state[ _BSR_IDX ] = _back_stack.length ? _back_stack.length - 1 : 0;
+    
+        //state[ _BSR_IDX ] = _runtime_back_stack.length
+        //    ? 1 === _runtime_back_stack.length
+        //        ? 1
+        //        : _runtime_back_stack.length - 1
+        //    : 0;
 
         return state;
     }
@@ -3140,10 +3179,13 @@
      */
     function _is_backward(event) {
         var current = _current_state;
-
+    
         return _FIRST_STATE === current[ _BSR_IDX ]
-            || event.state[ _BSR_IDX ] === 0
             || event.state[ _BSR_IDX ] < current[ _BSR_IDX ];
+        
+        //return _FIRST_STATE === current[ _BSR_IDX ]
+        //    || event.state[ _BSR_IDX ] === 0
+        //    || event.state[ _BSR_IDX ] < current[ _BSR_IDX ];
     }
     
     /**
@@ -3153,7 +3195,7 @@
      * @private
      */
     function _handle_backward(event) {
-        if ( history_api_supported || event.state[ _BSR_IDX ] in _back_stack )
+        if ( history_api_supported || event.state[ _BSR_IDX ] in _runtime_back_stack )
             _perform_back();
     }
 
@@ -3170,7 +3212,8 @@
     function _check_state_event(event) {
         return event['state'] && typeof event['state'][ _BSR_IDX ] !== 'undefined';
     }
-
+    
+    /* TODO(XCL): 当 sessionStorage 数据被清空，此处将无法完成 backward 操作 */
     /* TODO(XCL): 如果跳转到其它页面当后退至当前页面则可能 stack 丢失(RELOAD) */
     /* TODO(XCL): 若 history 有多项记录, 此时 reload 会导致无法进行后退操作(BackStack 为空) */
     var _pop_state_handler = function(event) {
@@ -3179,17 +3222,37 @@
          *              快速 touch 操作来的 page 无跳转的问题, 此时仅仅是进行
          *              pop back 操作
          */
-        if ( ! _check_state_event( event ) )
+        //if ( ! _check_state_event( event ) )
+        //    return;
+    
+        if ( ! event.state ) {
+            if ( _runtime_back_stack.length ) {
+                var fake_event = { state: {} };
+                fake_event.state[ _STACK_INDEX_ ] = _FIRST_STATE;
+            
+                _handle_backward( fake_event );
+                return;
+            }
+        
+            location.reload();
             return;
-
+        }
+    
         /* FIXME(XCL): To handling the state loss... */
-        if ( ! _back_stack.length ) {
+        if ( ! _runtime_back_stack.length ) {
+            if ( event.state ) {
+                location.reload();
+                return;
+            }
+            
+            
             /* FIXME(XCL): 若开启 reload 则在部分设备，后退时会 reload */
             if ( session_storage_supported ) {
                 /* TODO(XCL): reload 操作是否需要清楚该值 */
                 var last_state = ss.getItem( SESSION_CURRENT_STATE );
 
                 if ( last_state ) {
+                    // TODO(XCL): 如果 stack id 有间隔如何对待
                     var previous_state = ss.getItem( '#' + --persistent_session_stack_idx_offset );
     
                     if ( previous_state ) {
@@ -3939,20 +4002,35 @@
      */
     function _process_page_navigation_link($link) {
         var href = $link.attr( 'href' );
-        
+    
         if ( $link.is( '.xfly-page__nav' ) && href ) {
-            return _process_forward_navigation( $link );
-        }
-        else if ( $link.is( '.xfly-page__back' )
-            || ~ ( href || '' ).indexOf( '#!-' ) ) {
-            history.back();
+            var route = _extract_route_from_link( href );
+        
+            if ( _exist( route.target ) ) {
+                _request_go( route.target, route.args );
+                return !! 1;
+            } else {
+                if ( href.charAt( 0 ) !== '/' )
+                    $link.attr( 'href', href = '/' + href );
             
+                // FIXME(XCL): 如果这里不 push state 则，后退不会重新加载
+                //_push_history_state( _new_state(), '', href );
+                _persistent_state_for_redirect( href );
+            }
+        }
+        else if (
+            $link.is( '.xfly-page__back' )
+            || ~ ( href || '' ).indexOf( '#!-' )
+        ) {
+            history.back();
+        
             return !! 1;
         }
-        
-        /* 是否为站内常规 Hyper Link */
-        if ( 0 === ( href || '' ).indexOf( '/' ) )
+    
+        /* 是否为站内常规 HyperLink */
+        else if ( 0 === ( href || '' ).indexOf( '/' ) ) {
             _persistent_state_for_redirect( href );
+        }
     }
     
     /* ----------------------------------------------------------------------- /
@@ -3991,125 +4069,134 @@
     $( function() {
         var route = _get_current_route();
 
-        if ( 0 && ROOT == route.target ) {
-            /* 装载默认的 page */
-        }
-        else {
-            /* TODO(XCL): 处理热加载... */
-            var boot_loader = function () {
-                var first,
-                    layout;
-                
-                var pageId;
-    
-                /* To apply the params as args */
-                _override_args( route.target, route.args );
-    
-                if ( _is_support_multi_instance( route.target ) ) {
-                    /* TODO(XCL): Generate the drive */
-        
-                    /**
-                     * 对于多实例 page 我们使用在其基本 id 之上加 args 的 hash 用于区分，
-                     * 如：ui.view#123456
-                     */
-                    var deriveId =
-                            _calculate_derive_key( route.target, route.args );
-        
-                    /**
-                     * XXX: 实际上我们是依赖 args 的不同来维护多实例，但这并不意味着允
-                     *      许 args 为 null。
-                     */
-                    if ( route.target == deriveId ) {
-                        pageId = route.target;
-                    } else {
-                        if ( ! _exist( deriveId ) )
-                            _build_derive( route.target, deriveId, route.args );
+     
+        /* TODO(XCL): 处理热加载... */
+        var boot_loader = function () {
+            var first,
+                layout;
             
-                        pageId = deriveId;
-                    }
-                } else {
-                    pageId = route.target;
-                }
-    
-                /* Assign for current */
-                first   = _get_page( pageId );
-                layout  = $( '.xfly-page' );
+            var pageId;
 
-                /* 标识 Page 实例已初始化 */
-                _mark_was_instantiated( first );
+            /* To apply the params as args */
+            _override_args( route.target, route.args );
+
+            if ( _is_support_multi_instance( route.target ) ) {
+                /* TODO(XCL): Generate the drive */
     
-                /* ----- 如果为首次呈现则需要执行一系列的初始动作 Lifecycle { ---- */
+                /**
+                 * 对于多实例 page 我们使用在其基本 id 之上加 args 的 hash 用于区分，
+                 * 如：ui.view#123456
+                 */
+                var deriveId =
+                        _calculate_derive_key( route.target, route.args );
     
-                /* FIXME(XCL): 不管是否被暂停这里绝对执行恢复操作 */
-                _move_to_state( first, RESUMED );
-    
-                /* ---------------------- Lifecycle } ----------------------- */
-    
-                if ( history_api_supported ) {
-                    /*_add_to_back_stack( first );*/
+                /**
+                 * XXX: 实际上我们是依赖 args 的不同来维护多实例，但这并不意味着允
+                 *      许 args 为 null。
+                 */
+                if ( route.target == deriveId ) {
+                    pageId = route.target;
+                } else {
+                    if ( ! _exist( deriveId ) )
+                        _build_derive( route.target, deriveId, route.args );
         
-                    /* FIXME(XCL): Set up the initiate state */
-                    history.replaceState(
-                        _new_state(),
-                        first[ _TITLE ],
-                        _build_url_for_render( first )
-                    );
+                    pageId = deriveId;
                 }
-    
-                /* 设为当前 page */
-                _current                    = first;
-                _current_state[ _BSR_IDX ]  = _FIRST_STATE;
-    
-                if ( session_storage_supported ) {
-                    var last_state = ss.getItem(
-                        '#' + ss.getItem( SESSION_CURRENT_STATE ) );
-                    
-                    /* 是否为 Redirect 行为 */
-                    if ( last_state ) {
-                        /* 是否为 F5 OR Control + F5 操作 */
-                        if ( decodeURI( last_state )
-                            !== _build_url_for_render( _current ) ) {
-                        }
-                    } else {
-                        _persistent_state(
-                            _current_state,
-                            '',
-                            _build_url_for_render( _current )
-                        );
-                    }
-                }
-            };
-            
-            /* 关联 page 实例 */
-            if ( _exist( route.target ) ) {
-                boot_loader();
             } else {
-                _should_lazy_load( route.target )
-                    && _setup_pending_boot_page( route.target, boot_loader );
+                pageId = route.target;
             }
+
+            /* Assign for current */
+            first   = _get_page( pageId );
+            layout  = $( '.xfly-page' );
+
+            // TODO(XCL): Some reason caused error
+            if ( ! first ) {
+                console.error( 'Some reason caused error' );
+                return;
+            }
+            /* 标识 Page 实例已初始化 */
+            _mark_was_instantiated( first );
+            
+            /* FIXME(XCL): 对于首个 page 一定要在 attach 之前调用该操作 */
+            _set_up_layout_id( first, layout );
+
+            /* ----- 如果为首次呈现则需要执行一系列的初始动作 Lifecycle { ---- */
+
+            /* FIXME(XCL): 不管是否被暂停这里绝对执行恢复操作 */
+            _move_to_state( first, RESUMED );
+
+            /* ---------------------- Lifecycle } ----------------------- */
+
+            if ( history_api_supported ) {
+                /*_add_to_back_stack( first );*/
+    
+                /* FIXME(XCL): Set up the initiate state */
+                history.replaceState(
+                    _new_state(),
+                    first[ _TITLE ],
+                    _build_url_for_render( first )
+                );
+            }
+
+            /* 设为当前 page */
+            _current                    = first;
+            _current_state[ _BSR_IDX ]  = _FIRST_STATE;
+
+            if ( session_storage_supported ) {
+                var last_state = ss.getItem(
+                    '#' + ss.getItem( SESSION_CURRENT_STATE ) );
+                
+                /* 是否为 Redirect 行为 */
+                if ( last_state ) {
+                    /* 是否为 F5 OR Control + F5 操作 */
+                    //if ( decodeURI( last_state )
+                    //    !== _build_url_for_render( _current ) ) {
+                    //}
+                } else {
+                    //_persistent_state(
+                    //    _current_state,
+                    //    '',
+                    //    _build_url_for_render( _current )
+                    //);
+                }
+            }
+    
+            /* 用来处理全部 link 的点击事件 */
+            $( document ).on( 'click', 'a', function(e) {
+                return ! _process_page_navigation_link( $( e.currentTarget ) );
+            } );
+    
+            /* Manipulating the browser history */
+            // TODO(XCL): Chrome 66.0.4459.122 iOS 版本 popstate 会在 onload 后被触发...
+            history_api_supported
+                && ( window.addEventListener( _LISTEN_WINDOW_POP_STATE, _pop_state_handler ) );
+    
+            /* Handle the scroll restoration after redirect if needed */
+            if ( scroll_restoration_supported ) {
+                history.scrollRestoration = 'manual';
+        
+                session_storage_supported
+                    && ( _perform_scroll_restore_after_redirect_if_needed() );
+            }
+        };
+        
+        /* 关联 page 实例 */
+        if ( _exist( route.target ) ) {
+            boot_loader();
+        } else {
+            if ( _should_lazy_load( route.target ) )
+                _setup_pending_boot_page( route.target, boot_loader );
+            else
+                _setup_pending_page( route.target, void 0, void 0, void 0, boot_loader );
         }
+        
     
         /* TODO(XCL): addEventListener */
         /*_LISTENER_HASH_CHANGE in win && ( window[ _LISTENER_HASH_CHANGE ] =
             _on_navigation_change );*/
-    
-        /* 用来处理全部 link 的点击事件 */
-        $( document ).on( 'click', 'a', function(e) {
-            return ! _process_page_navigation_link( $( e.currentTarget ) );
-        } );
-    
-        /* Manipulating the browser history */
-        history_api_supported
-            && ( window.addEventListener( _LISTEN_WINDOW_POP_STATE, _pop_state_handler ) );
-
-        /* Handle the scroll restoration after redirect if needed */
-        if ( scroll_restoration_supported ) {
-            history.scrollRestoration = 'manual';
-
-            session_storage_supported
-                && ( _perform_scroll_restore_after_redirect_if_needed() );
-        }
-
+        
+        
         /**
          * 配置 CSS Transform 硬件加速
          * (function(viewport) {
