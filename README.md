@@ -99,7 +99,7 @@ Be careful, the Browser Cache, GOOD LUCK FOR YOU.
 
 
 # Examples
-See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code](https://github.com/c-ong/c-ong.github.io/tree/master/js/app) dir.
+See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code](https://github.com/c-ong/c-ong.github.io/tree/master/src/app/codes/xfly/examples) dir.
 
 ![Xfly](https://github.com/c-ong/xfly/blob/master/screenshots/xfly.png?raw=true)
 
