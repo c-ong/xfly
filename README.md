@@ -101,7 +101,7 @@ Be careful, the Browser Cache, GOOD LUCK FOR YOU.
 # Examples
 See the [https://c-ong.github.io](https://c-ong.github.io) OR the [examples code](https://github.com/c-ong/c-ong.github.io/tree/master/js/app) dir.
 
-![Xfly](https://github.com/c-ong/xfly/blob/master/screenshots/xfly.png?raw=true)
+![Xfly](https://github.com/c-ong/xfly/blob/master/screenshots/c-ong.github.io_codes_xfly_examples.png)
 
 
 # Documents
